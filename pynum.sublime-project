@@ -1,0 +1,32 @@
+{
+	"build_systems": [
+		{
+			"name": "Test",
+			"working_dir": "$project_path",
+			"cmd": ["venv/bin/python", "-m", "pytest"],
+		},
+		{
+			"name": "New Terminal",
+			"working_dir": "$project_path",
+			"cmd": ["xfce4-terminal"],
+		},
+		{
+			"name": "New Python Shell",
+			"working_dir": "$project_path",
+			"cmd": ["xfce4-terminal", "-e", "venv/bin/python"],
+		},
+	],
+
+	"folders":
+	[
+		{
+			"path": "."
+		}
+	],
+	
+	"settings": {
+		"SublimeLinter.linters.pylint.executable": [
+			"$project_path/venv/bin/python", "-m", "pylint",
+		],
+	},
+}
