@@ -81,6 +81,9 @@ class Indexer:
 
     def added_dim(self, new_dim):
         """Create a copy of the indexer, adding an extra dimension."""
+        if not -len(self._shape) <= new_dim <= len(self._shape):
+            raise IndexError
+
         return self.__class__(
             shape=self._shape[:new_dim] + (1,) + self._shape[new_dim:],
             offset=self._offset,
