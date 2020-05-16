@@ -4,6 +4,50 @@ import numbers
 import operator
 
 
+def _nd_indices(shape):
+    """Generate sequence of dimension indices for a given shape."""
+    return itertools.product(*(range(i) for i in shape))
+
+
+def _nd_getitem(array, nd_index):
+    """
+    Get an item from an nd-array-like object.
+
+    Meant for use on, e.g., nested lists. Does not accept slices.
+    """
+    if not isinstance(nd_index, tuple):
+        raise ValueError
+    if not all(isinstance(idx, numbers.Integral) for idx in nd_index):
+        raise ValueError
+    return functools.reduce(operator.getitem, nd_index, array)
+
+
+def _nd_shape(array):
+    """Calculate the dimensionality of the given nested list."""
+    shape = []
+
+    while True:
+        dim_len = None  # None-len denotes scalars
+        for i, nd_index in enumerate(_nd_indices(shape)):
+            subarray = _nd_getitem(array, nd_index)
+
+            try:
+                subarray_len = len(subarray)
+            except TypeError:
+                subarray_len = None
+
+            if dim_len != subarray_len:
+                if i > 0:
+                    raise ValueError("non-uniform dimension lengths")
+                dim_len = subarray_len
+
+        if dim_len is None:
+            break
+        shape.append(dim_len)
+
+    return tuple(shape)
+
+
 class Indexer:
     """A generic indexer object."""
 
@@ -95,9 +139,9 @@ class Indexer:
         in-1 -> array[0, 0, ..., 0, -1]
         in -> array[0, 0, ..., 1, 0]
         """
-        for dim_indices in itertools.product(*(range(i) for i in self._shape)):
+        for nd_index in _nd_indices(self._shape):
             yield self._offset + sum(
-                i*stride for i, stride in zip(dim_indices, self._strides)
+                i*stride for i, stride in zip(nd_index, self._strides)
             )
 
     def __len__(self):
