@@ -152,7 +152,7 @@ class Indexer:
 
         # Map slices/single indices to literal coordinates
         index = tuple(
-            range(dim)[idx]
+            None if idx is None else range(dim)[idx]
             for idx, dim in zip(index, self._shape)
         )
 
@@ -163,12 +163,12 @@ class Indexer:
                 for i, stride in zip(index, self._strides)
             ),
             shape=tuple(
-                len(idx)
+                1 if idx is None else len(idx)
                 for idx in index
                 if not isinstance(idx, numbers.Integral)
             ),
             strides=tuple(
-                idx.step * stride
+                1 if idx is None else idx.step * stride
                 for idx, stride in zip(index, self._strides)
                 if not isinstance(idx, numbers.Integral)
             ),
