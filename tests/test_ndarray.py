@@ -46,6 +46,33 @@ def test_indexer_make_basic(shape, expt_shape, expt_offset, expt_strides):
     assert indexer._strides == expt_strides
 
 
+@pytest.mark.parametrize('indexer, dim', [
+    (ndarray.Indexer.make_basic(shape=()), 0),
+
+    (ndarray.Indexer.make_basic(shape=(3,)), 0),
+    (ndarray.Indexer.make_basic(shape=(3,)), 1),
+    (ndarray.Indexer.make_basic(shape=(3,)), -1),
+
+    (ndarray.Indexer.make_basic(shape=(5, 3, 7)), 0),
+    (ndarray.Indexer.make_basic(shape=(5, 3, 7)), 1),
+    (ndarray.Indexer.make_basic(shape=(5, 3, 7)), 2),
+    (ndarray.Indexer.make_basic(shape=(5, 3, 7)), 3),
+    (ndarray.Indexer.make_basic(shape=(5, 3, 7)), -1),
+    (ndarray.Indexer.make_basic(shape=(5, 3, 7)), -2),
+    (ndarray.Indexer.make_basic(shape=(5, 3, 7)), -3),
+])
+def test_indexer_added_dim(indexer, dim):
+    new_indexer = indexer.added_dim(dim)
+    assert new_indexer._shape == (
+        indexer._shape[:dim] + (1,) + indexer._shape[dim:]
+    )
+    assert (
+        new_indexer._strides[:dim if dim >= 0 else dim-1]
+        + new_indexer._strides[dim+1 if dim >= 0 else dim:]
+    ) == indexer._strides
+    assert new_indexer is not indexer
+
+
 @pytest.mark.parametrize('indexer, index, expt_indexer', [
     (
         ndarray.Indexer.make_basic(shape=(3,)), 0,

@@ -79,6 +79,14 @@ class Indexer:
         """
         pass
 
+    def added_dim(self, new_dim):
+        """Create a copy of the indexer, adding an extra dimension."""
+        return self.__class__(
+            shape=self._shape[:new_dim] + (1,) + self._shape[new_dim:],
+            offset=self._offset,
+            strides=self._strides[:new_dim] + (1,) + self._strides[new_dim:]
+        )
+
     def sliced(self, index):
         """Make a new indexer for a slice of the data."""
         pass
