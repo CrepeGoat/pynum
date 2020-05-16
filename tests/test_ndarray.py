@@ -3,6 +3,53 @@ import pytest
 from pynum import ndarray
 
 
+@pytest.mark.parametrize('shape, expt_indices', [
+    ((), [()]),
+    ((3,), [(0,), (1,), (2,)]),
+    ((2, 7,), [
+        (0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6),
+        (1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6),
+    ]),
+])
+def test_nd_indices(shape, expt_indices):
+    assert list(ndarray._nd_indices(shape)) == expt_indices
+
+
+@pytest.mark.parametrize('array, nd_indices, expt_values', [
+    (1, [()], [1]),
+    ([1, 2, 3], [(0,), (1,), (2,), ()], [1, 2, 3, [1, 2, 3]]),
+    (
+        [[1, 2, 3], [4, 5, 6]],
+        [(0, 0), (1, 2), (0,), ()],
+        [1, 6, [1, 2, 3], [[1, 2, 3], [4, 5, 6]]]
+    ),
+])
+def test_nd_getitem(array, nd_indices, expt_values):
+    assert [
+        ndarray._nd_getitem(array, nd_index)
+        for nd_index in nd_indices
+    ] == expt_values
+
+
+@pytest.mark.parametrize('array, expt_shape', [
+    (1, ()),
+    ([1, 2, 3], (3,)),
+    ([[1, 2, 3], [4, 5, 6]], (2, 3)),
+])
+def test_nd_shape(array, expt_shape):
+    assert ndarray._nd_shape(array) == expt_shape
+
+
+@pytest.mark.parametrize('array, expt_error', [
+    ([1, 2, 3, [4, 5, 6]], ValueError),
+])
+def test_nd_shape_raises(array, expt_error):
+    with pytest.raises(expt_error):
+        _ = ndarray._nd_shape(array)
+
+
+###############################################################################
+
 @pytest.mark.parametrize('shape, offset, strides', [
     ((), 0, ()),
     ((3,), 0, (1,)),
