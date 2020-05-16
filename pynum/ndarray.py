@@ -1,4 +1,5 @@
 import itertools
+import numbers
 import operator
 
 
@@ -9,6 +10,38 @@ class Indexer:
 
     def __init__(self, shape, offset, strides):
         """Construct an instance."""
+        if not isinstance(shape, tuple):
+            shape = tuple(shape)
+        if not isinstance(strides, tuple):
+            strides = tuple(strides)
+
+        if not all(isinstance(i, numbers.Integral) for i in shape):
+            raise TypeError("shape dimensions must all be integral values")
+        if not isinstance(offset, numbers.Integral):
+            raise TypeError("index offset must be an integral value")
+        if not all(isinstance(i, numbers.Integral) for i in strides):
+            raise TypeError("strides must all be integral values")
+
+        if not all(i >= 0 for i in shape):
+            raise ValueError(
+                "shape dimensions must all be non-negative values"
+            )
+
+        if len(shape) != len(strides):
+            raise ValueError(
+                "numbers of shape dimensions and strides must be equal"
+            )
+
+        if (
+            all(i != 0 for i in shape)
+            and offset + sum(
+                i * j for i, j in zip(shape, strides) if j < 0
+            ) < 0
+        ):
+            raise ValueError(
+                "resulting indices must all be positive values"
+            )
+
         self._shape = shape
         self._offset = offset
         self._strides = strides
