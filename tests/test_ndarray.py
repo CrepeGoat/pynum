@@ -145,6 +145,11 @@ def test_indexer_added_dim_raises(indexer, dim, expt_error):
 
 @pytest.mark.parametrize('indexer, index, expt_indexer', [
     (
+        ndarray.Indexer.make_basic(shape=()), (),
+        ndarray.Indexer(shape=(), offset=0, strides=()),
+    ),
+
+    (
         ndarray.Indexer.make_basic(shape=(3,)), 0,
         ndarray.Indexer(shape=(), offset=0, strides=()),
     ),
