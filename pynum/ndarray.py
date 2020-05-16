@@ -122,14 +122,17 @@ class Indexer:
     def sliced(self, index):
         """Make a new indexer for a slice of the data."""
         # Normalize single indices or index sequences into tuples
-        if isinstance(index, (numbers.Integral, slice)):
+        if isinstance(index, (numbers.Integral, slice, type(None))):
             index = (index,)
         elif not isinstance(index, tuple):
             raise ValueError
 
         def slice_fill(index):
             """Create the slice(None) filling for an nd-index."""
-            num = len(self._shape) - sum(1 for i in index if i is not Ellipsis)
+            num = len(self._shape) - sum(
+                1 for i in index
+                if i is not None and i is not Ellipsis
+            )
             return (slice(None),) * num
 
         # Strip out ellipses
@@ -144,35 +147,42 @@ class Indexer:
             assert len(index) == len(self._shape)
 
         # Fill empty dims with full slices
-        if len(index) < len(self._shape):
+        if sum(1 for i in index if i is not None) < len(self._shape):
             index = index + slice_fill(index)
-            assert len(index) == len(self._shape)
-        elif len(index) > len(self._shape):
+            assert sum(1 for i in index if i is not None) == len(self._shape)
+        elif sum(1 for i in index if i is not None) > len(self._shape):
             raise ValueError
 
         # Map slices/single indices to literal coordinates
         index = tuple(
-            range(dim)[idx]
+            range(dim)[idx] if idx is not None else None
             for idx, dim in zip(index, self._shape)
         )
+        reduced_index = tuple(idx for idx in index if idx is not None)
 
         # Calculate parameters
         result = self.__class__(
             offset=sum(
                 (i if isinstance(i, numbers.Integral) else i.start) * stride
-                for i, stride in zip(index, self._strides)
+                for i, stride in zip(reduced_index, self._strides)
             ),
             shape=tuple(
                 len(idx)
-                for idx in index
+                for idx in reduced_index
                 if not isinstance(idx, numbers.Integral)
             ),
             strides=tuple(
                 idx.step * stride
-                for idx, stride in zip(index, self._strides)
+                for idx, stride in zip(reduced_index, self._strides)
                 if not isinstance(idx, numbers.Integral)
             ),
         )
+
+        for new_dim, idx in enumerate(
+            idx for idx in index if not isinstance(idx, numbers.Integral)
+        ):
+            if idx is None:
+                result = result.added_dim(new_dim)
 
         return result
 
