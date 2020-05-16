@@ -73,6 +73,18 @@ def test_indexer_added_dim(indexer, dim):
     assert new_indexer is not indexer
 
 
+@pytest.mark.parametrize('indexer, dim, expt_error', [
+    (ndarray.Indexer.make_basic(shape=(3,)), 2, IndexError),
+    (ndarray.Indexer.make_basic(shape=(3,)), -2, IndexError),
+
+    (ndarray.Indexer.make_basic(shape=(5, 3, 7)), 4, IndexError),
+    (ndarray.Indexer.make_basic(shape=(5, 3, 7)), -4, IndexError),
+])
+def test_indexer_added_dim_raises(indexer, dim, expt_error):
+    with pytest.raises(expt_error):
+        _ = indexer.added_dim(dim)
+
+
 @pytest.mark.parametrize('indexer, index, expt_indexer', [
     (
         ndarray.Indexer.make_basic(shape=(3,)), 0,
