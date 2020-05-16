@@ -19,6 +19,13 @@ def test_indexer_init(shape, offset, strides):
 
     (1, 0, (), TypeError),
     ((), 0, 1, TypeError),
+
+    ((1.,), 0, (1,), TypeError),
+    ((1,), 0., (1,), TypeError),
+    ((1,), 0, (1.,), TypeError),
+
+    ((-1,), 0, (1,), ValueError),
+    ((1,), -1, (1,), ValueError),
 ])
 def test_indexer_init_raises(shape, offset, strides, expt_error):
     with pytest.raises(expt_error):
