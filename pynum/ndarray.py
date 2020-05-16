@@ -58,7 +58,13 @@ class Indexer:
     @classmethod
     def make_basic(cls, shape):
         """Construct a basic, contiguous indexer object."""
-        pass
+        return cls(
+            shape=shape,
+            offset=0,
+            strides=shape and tuple(
+                itertools.accumulate((1,) + shape[:0:-1], operator.mul)
+            )[::-1],
+        )
 
     def __iter__(self):
         """
