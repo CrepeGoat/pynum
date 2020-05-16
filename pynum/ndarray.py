@@ -7,7 +7,7 @@ import operator
 class Indexer:
     """A generic indexer object."""
 
-    __slots__ = ('_offset', '_shape', '_strides')
+    __slots__ = ('_shape', '_offset', '_strides')
 
     def __init__(self, shape, offset, strides):
         """Construct an instance."""
