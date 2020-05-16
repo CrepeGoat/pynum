@@ -67,6 +67,23 @@ class Indexer:
             )[::-1],
         )
 
+    def __eq__(self, other):
+        """
+        Test for equality.
+
+        Takes into account state redundancies; i.e., any dimension of size 1 or
+        0 is equivalent, regardless of stride.
+        """
+        return (
+            isinstance(other, self.__class__)
+            and self._shape == other._shape
+            and self._offset == other._offset
+            and all(
+                i == j or k in (0, 1)
+                for i, j, k in zip(self._strides, other._strides, self._shape)
+            )
+        )
+
     def __iter__(self):
         """
         Generate individual flat-array indices from an nd-index.
