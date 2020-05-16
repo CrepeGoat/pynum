@@ -1,3 +1,4 @@
+import functools
 import itertools
 import numbers
 import operator
@@ -77,7 +78,14 @@ class Indexer:
         in-1 -> array[0, 0, ..., 0, -1]
         in -> array[0, 0, ..., 1, 0]
         """
-        pass
+        for dim_indices in itertools.product(*(range(i) for i in self._shape)):
+            yield self._offset + sum(
+                i*stride for i, stride in zip(dim_indices, self._strides)
+            )
+
+    def __len__(self):
+        """Calculate number of indices."""
+        return functools.reduce(operator.mul, self._shape, 1)
 
     def added_dim(self, new_dim):
         """Create a copy of the indexer, adding an extra dimension."""

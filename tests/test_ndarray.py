@@ -46,6 +46,26 @@ def test_indexer_make_basic(shape, expt_shape, expt_offset, expt_strides):
     assert indexer._strides == expt_strides
 
 
+@pytest.mark.parametrize('shape', [(), (3,), (1, 2, 3,)])
+def test_indexer_basic_iter_len(shape):
+    indexer = ndarray.Indexer.make_basic(shape)
+    assert tuple(indexer) == tuple(range(len(indexer)))
+
+
+@pytest.mark.parametrize('indexer, expt_indices', [
+    (ndarray.Indexer(shape=(3,), offset=2, strides=(1,)), (2, 3, 4)),
+    (ndarray.Indexer(shape=(3,), offset=0, strides=(3,)), (0, 3, 6)),
+
+    (
+        ndarray.Indexer(shape=(3, 2), offset=0, strides=(5, 7)),
+        (0, 7, 5, 12, 10, 17),
+    ),
+])
+def test_indexer_iter_len(indexer, expt_indices):
+    assert tuple(indexer) == expt_indices
+    assert len(indexer) == len(expt_indices)
+
+
 @pytest.mark.parametrize('indexer, dim', [
     (ndarray.Indexer.make_basic(shape=()), 0),
 
