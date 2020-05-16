@@ -66,6 +66,44 @@ def test_indexer_iter_len(indexer, expt_indices):
     assert len(indexer) == len(expt_indices)
 
 
+@pytest.mark.parametrize('indexer1, indexer2', [
+    (
+        ndarray.Indexer.make_basic(shape=()),
+        ndarray.Indexer.make_basic(shape=()),
+    ),
+    (
+        ndarray.Indexer.make_basic(shape=(3,)),
+        ndarray.Indexer.make_basic(shape=(3,)),
+    ),
+    (
+        ndarray.Indexer.make_basic(shape=(3,)),
+        ndarray.Indexer.make_basic(shape=(5,)),
+    ),
+    (
+        ndarray.Indexer.make_basic(shape=(3, 5)),
+        ndarray.Indexer.make_basic(shape=(5, 3)),
+    ),
+    (
+        ndarray.Indexer.make_basic(shape=(3, 5)),
+        ndarray.Indexer.make_basic(shape=(1, 3, 5)),
+    ),
+
+    (
+        ndarray.Indexer(shape=(3, 5), offset=0, strides=(5, 1)),
+        ndarray.Indexer(shape=(3, 5), offset=2, strides=(5, 1)),
+    ),
+    (
+        ndarray.Indexer(shape=(3, 5), offset=0, strides=(1, 5)),
+        ndarray.Indexer(shape=(3, 5), offset=0, strides=(5, 1)),
+    ),
+])
+def test_indexer_eq(indexer1, indexer2):
+    assert (indexer1 == indexer2) == (
+        indexer1._shape == indexer2._shape
+        and tuple(indexer1) == tuple(indexer2)
+    )
+
+
 @pytest.mark.parametrize('indexer, dim', [
     (ndarray.Indexer.make_basic(shape=()), 0),
 
