@@ -35,7 +35,7 @@ class Indexer:
         if (
             all(i != 0 for i in shape)
             and offset + sum(
-                i * j for i, j in zip(shape, strides) if j < 0
+                (i-1) * j for i, j in zip(shape, strides) if j < 0
             ) < 0
         ):
             raise ValueError(

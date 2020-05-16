@@ -8,6 +8,7 @@ from pynum import ndarray
     ((3,), 0, (1,)),
     ((3,), 5, (1,)),
     ((1, 2, 3,), 0, (6, 3, 1,)),
+    ((3,), 2, (-1,))
 ])
 def test_indexer_init(shape, offset, strides):
     _ = ndarray.Indexer(shape, offset, strides)
