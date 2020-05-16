@@ -121,7 +121,60 @@ class Indexer:
 
     def sliced(self, index):
         """Make a new indexer for a slice of the data."""
-        pass
+        # Normalize single indices or index sequences into tuples
+        if isinstance(index, (numbers.Integral, slice)):
+            index = (index,)
+        elif not isinstance(index, tuple):
+            raise ValueError
+
+        def slice_fill(index):
+            """Create the slice(None) filling for an nd-index."""
+            num = len(self._shape) - sum(1 for i in index if i is not Ellipsis)
+            return (slice(None),) * num
+
+        # Strip out ellipses
+        try:
+            i_mid = index.index(Ellipsis)
+        except ValueError:
+            pass
+        else:
+            if Ellipsis in index[i_mid+1:]:
+                raise ValueError
+            index = index[:i_mid] + slice_fill(index) + index[i_mid+1:]
+            assert len(index) == len(self._shape)
+
+        # Fill empty dims with full slices
+        if len(index) < len(self._shape):
+            index = index + slice_fill(index)
+            assert len(index) == len(self._shape)
+        elif len(index) > len(self._shape):
+            raise ValueError
+
+        # Map slices/single indices to literal coordinates
+        index = tuple(
+            range(dim)[idx]
+            for idx, dim in zip(index, self._shape)
+        )
+
+        # Calculate parameters
+        result = self.__class__(
+            offset=sum(
+                (i if isinstance(i, numbers.Integral) else i.start) * stride
+                for i, stride in zip(index, self._strides)
+            ),
+            shape=tuple(
+                len(idx)
+                for idx in index
+                if not isinstance(idx, numbers.Integral)
+            ),
+            strides=tuple(
+                idx.step * stride
+                for idx, stride in zip(index, self._strides)
+                if not isinstance(idx, numbers.Integral)
+            ),
+        )
+
+        return result
 
 
 class NDArray:
