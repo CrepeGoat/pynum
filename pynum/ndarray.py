@@ -198,7 +198,7 @@ class Indexer:
 
         # Calculate parameters
         result = self.__class__(
-            offset=sum(
+            offset=self._offset + sum(
                 (i if isinstance(i, numbers.Integral) else i.start) * stride
                 for i, stride in zip(index, self._strides)
             ),
