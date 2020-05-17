@@ -113,6 +113,30 @@ def test_indexer_iter_len(indexer, expt_indices):
     assert len(indexer) == len(expt_indices)
 
 
+@pytest.mark.parametrize('indexer', [
+    ndarray.Indexer.make_basic(shape=()),
+    ndarray.Indexer.make_basic(shape=(3,)),
+    ndarray.Indexer.make_basic(shape=(2, 3,)),
+
+    ndarray.Indexer(shape=(5,), offset=3, strides=(-1,)),
+    ndarray.Indexer(shape=(3, 5), offset=-2, strides=(-5, 15)),
+])
+def test_indexer_min(indexer):
+    assert min(indexer) == indexer.min
+
+
+@pytest.mark.parametrize('indexer', [
+    ndarray.Indexer.make_basic(shape=()),
+    ndarray.Indexer.make_basic(shape=(3,)),
+    ndarray.Indexer.make_basic(shape=(2, 3,)),
+
+    ndarray.Indexer(shape=(5,), offset=3, strides=(-1,)),
+    ndarray.Indexer(shape=(3, 5), offset=-2, strides=(-5, 15)),
+])
+def test_indexer_max(indexer):
+    assert max(indexer) == indexer.max
+
+
 @pytest.mark.parametrize('indexer1, indexer2', [
     (
         ndarray.Indexer.make_basic(shape=()),
