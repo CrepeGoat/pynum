@@ -506,3 +506,50 @@ def test_ndarray_eq(array1, array2):
         )
     )
     assert (array1 == array2) == expt_result
+
+
+@pytest.mark.parametrize('array, index, expt_result', [
+    (ndarray.NDArray.from_values(1), (), 1),
+
+    (
+        ndarray.NDArray.from_values([1, 2, 3]), (),
+        ndarray.NDArray.from_values([1, 2, 3])
+    ),
+    (
+        ndarray.NDArray.from_values([1, 2, 3]), slice(1, None),
+        ndarray.NDArray.from_values([2, 3])
+    ),
+    (ndarray.NDArray.from_values([1, 2, 3]), 1, 2),
+
+    (
+        ndarray.NDArray.from_values([[1, 2, 3], [4, 5, 6]]), (),
+        ndarray.NDArray.from_values([[1, 2, 3], [4, 5, 6]])
+    ),
+    (
+        ndarray.NDArray.from_values([[1, 2, 3], [4, 5, 6]]), 0,
+        ndarray.NDArray.from_values([1, 2, 3])
+    ),
+    (
+        ndarray.NDArray.from_values([[1, 2, 3], [4, 5, 6]]), (0, Ellipsis),
+        ndarray.NDArray.from_values([1, 2, 3])
+    ),
+    (
+        ndarray.NDArray.from_values([[1, 2, 3], [4, 5, 6]]), slice(1, None),
+        ndarray.NDArray.from_values([[4, 5, 6]])
+    ),
+    (
+        ndarray.NDArray.from_values([[1, 2, 3], [4, 5, 6]]), (slice(None), 1),
+        ndarray.NDArray.from_values([2, 5])
+    ),
+    (
+        ndarray.NDArray.from_values([[1, 2, 3], [4, 5, 6]]), (Ellipsis, 1),
+        ndarray.NDArray.from_values([2, 5])
+    ),
+    (
+        ndarray.NDArray.from_values([[1, 2, 3], [4, 5, 6]]),
+        (slice(None), slice(None, 2)),
+        ndarray.NDArray.from_values([[1, 2], [4, 5]])
+    ),
+])
+def test_ndarray_getitem(array, index, expt_result):
+    assert array[index] == expt_result
