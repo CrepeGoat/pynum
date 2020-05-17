@@ -506,12 +506,3 @@ def test_ndarray_eq(array1, array2):
         )
     )
     assert (array1 == array2) == expt_result
-
-
-def test_ndarray_getitem(array, index, expt_result):
-    result = array[index]
-    assert result.shape == expt_result.shape
-    assert all(
-        result._flat_array[i] == expt_result._flat_array[j]
-        for i, j in zip(result._indexer, expt_result._indexer)
-    )
