@@ -231,11 +231,61 @@ class NDArray:
         self._flat_array = flat_array
         self._indexer = indexer
 
+    @classmethod
+    def from_values(cls, values, immutable=False):
+        """Create a new ndarray from a nested iterable."""
+        shape = _nd_shape(values)
+
+        FlatType = (tuple if immutable else list)
+        if shape:
+            flat_array = FlatType(
+                _nd_getitem(values, nd_index)
+                for nd_index in _nd_indices(shape)
+            )
+        else:
+            flat_array = FlatType([values])
+
+        return cls(flat_array, indexer=Indexer.make_basic(shape=shape))
+
+    def to_list(self):
+        if not self.shape:
+            return self._flat_array[self._indexer._offset]
+        return [
+            subarray if not isinstance(subarray, self.__class__)
+            else subarray.to_list()
+            for subarray in self
+        ]
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({repr(self.to_list())})'
+
+    def __eq__(self, other):
+        """Test for equality."""
+        try:
+            return all(s_item == o_item for s_item, o_item in zip(
+                (self._flat_array[i] for i in self._indexer),
+                (_nd_getitem(other, idx) for idx in _nd_indices(self.shape)),
+            ))
+        except TypeError:
+            return False
+
     def __getitem__(self, index):
         """Index/slice the data."""
-        return NDArray(self._flat_array, self._indexer.sliced(index))
+        result = NDArray(self._flat_array, self._indexer.sliced(index))
+        if not result.shape:
+            return result._flat_array[result._indexer._offset]
+        return result
 
     def __setitem__(self, index, value):
         """Set values to an index/slice of the data."""
         for i, j in zip(self._indexer.sliced(index), value._indexer):
             self._flat_array[i] = value._flat_array[j]
+
+    def __len__(self):
+        """Calculate number of subarrays in first dimension."""
+        return self.shape[0]
+
+    @property
+    def shape(self):
+        """Get array dimensionality."""
+        return self._indexer._shape
