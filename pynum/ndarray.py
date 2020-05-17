@@ -244,13 +244,10 @@ class NDArray:
         return cls(flat_array, indexer=Indexer.make_basic(shape=shape))
 
     def to_list(self):
+        """Convert array into equivalent nested lists."""
         if not self.shape:
             return self._flat_array[self._indexer._offset]
-        return [
-            subarray if not isinstance(subarray, self.__class__)
-            else subarray.to_list()
-            for subarray in self
-        ]
+        return [self.slice[i].to_list() for i in range(len(self))]
 
     def __repr__(self):
         return f'{self.__class__.__name__}({repr(self.to_list())})'
@@ -264,6 +261,22 @@ class NDArray:
             ))
         except TypeError:
             return False
+
+    @property
+    def slice(self):
+        """Index/slice the data."""
+        class Slice:
+            """
+            Alternative indexer for ndarrays.
+
+            Keeps the result as an NDArray, even if it's a 0D-array.
+            """
+
+            def __getitem__(_, index):
+                """Index/slice the data."""
+                return NDArray(self._flat_array, self._indexer.sliced(index))
+
+        return Slice()
 
     def __getitem__(self, index):
         """Index/slice the data."""
