@@ -198,14 +198,14 @@ class Indexer:
 
         # Calculate parameters
         result = self.__class__(
-            offset=self._offset + sum(
-                (i if isinstance(i, numbers.Integral) else i.start) * stride
-                for i, stride in zip(index, self._strides)
-            ),
             shape=tuple(
                 len(idx)
                 for idx in index
                 if not isinstance(idx, numbers.Integral)
+            ),
+            offset=self._offset + sum(
+                (i if isinstance(i, numbers.Integral) else i.start) * stride
+                for i, stride in zip(index, self._strides)
             ),
             strides=tuple(
                 idx.step * stride
