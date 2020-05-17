@@ -331,15 +331,15 @@ def test_ndarray_to_list(array, expt_result):
 @pytest.mark.parametrize('array1, array2', [
     # 0D
     (
-        ndarray.NDArray([], ndarray.Indexer.make_basic(shape=())),
-        ndarray.NDArray([], ndarray.Indexer.make_basic(shape=())),
+        ndarray.NDArray([1], ndarray.Indexer.make_basic(shape=())),
+        ndarray.NDArray([1], ndarray.Indexer.make_basic(shape=())),
     ),
     (
-        ndarray.NDArray([], ndarray.Indexer.make_basic(shape=())),
+        ndarray.NDArray([1], ndarray.Indexer.make_basic(shape=())),
         ndarray.NDArray([1, 2, 3], ndarray.Indexer.make_basic(shape=())),
     ),
     (
-        ndarray.NDArray([], ndarray.Indexer.make_basic(shape=())),
+        ndarray.NDArray([1], ndarray.Indexer.make_basic(shape=())),
         ndarray.NDArray([1, 2, 3], ndarray.Indexer.make_basic(shape=(1,))),
     ),
 
