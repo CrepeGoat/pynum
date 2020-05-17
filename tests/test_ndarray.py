@@ -73,7 +73,6 @@ def test_indexer_init(shape, offset, strides):
     ((1,), 0, (1.,), TypeError),
 
     ((-1,), 0, (1,), ValueError),
-    ((1,), -1, (1,), ValueError),
 ])
 def test_indexer_init_raises(shape, offset, strides, expt_error):
     with pytest.raises(expt_error):
@@ -303,6 +302,54 @@ def test_indexer_sliced(indexer, index, expt_indexer):
 @pytest.mark.skip('function too simple')
 def test_ndarray_init():
     pass
+
+
+@pytest.mark.parametrize('flat_array, indexer, expt_error', [
+    (
+        [1, 2, 3], ndarray.Indexer(shape=(4,), offset=0, strides=(1,)),
+        ValueError
+    ),
+    (
+        [1, 2, 3], ndarray.Indexer(shape=(3,), offset=-1, strides=(1,)),
+        ValueError
+    ),
+    (
+        [1, 2, 3], ndarray.Indexer(shape=(3,), offset=1, strides=(1,)),
+        ValueError
+    ),
+    (
+        [1, 2, 3], ndarray.Indexer(shape=(3,), offset=0, strides=(-1,)),
+        ValueError
+    ),
+    (
+        [1, 2, 3], ndarray.Indexer(shape=(3,), offset=0, strides=(2,)),
+        ValueError
+    ),
+
+    (
+        [1, 2, 3, 4, 5, 6],
+        ndarray.Indexer(shape=(3, 3,), offset=0, strides=(3, 1,)),
+        ValueError
+    ),
+    (
+        [1, 2, 3, 4, 5, 6],
+        ndarray.Indexer(shape=(2, 3,), offset=-1, strides=(3, 1,)),
+        ValueError
+    ),
+    (
+        [1, 2, 3, 4, 5, 6],
+        ndarray.Indexer(shape=(2, 3,), offset=1, strides=(3, 1,)),
+        ValueError
+    ),
+    (
+        [1, 2, 3, 4, 5, 6],
+        ndarray.Indexer(shape=(2, 3,), offset=0, strides=(3, 2,)),
+        ValueError
+    ),
+])
+def test_ndarray_init_raises(flat_array, indexer, expt_error):
+    with pytest.raises(expt_error):
+        _ = ndarray.NDArray(flat_array, indexer)
 
 
 @pytest.mark.parametrize('values, expt_result', [
