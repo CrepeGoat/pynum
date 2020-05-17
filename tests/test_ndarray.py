@@ -268,3 +268,170 @@ def test_indexer_added_dim_raises(indexer, dim, expt_error):
 ])
 def test_indexer_sliced(indexer, index, expt_indexer):
     assert indexer.sliced(index) == expt_indexer
+
+
+###############################################################################
+
+@pytest.mark.skip('function too simple')
+def test_ndarray_init():
+    pass
+
+
+@pytest.mark.parametrize('values, expt_result', [
+    (
+        1, ndarray.NDArray([1], ndarray.Indexer.make_basic(shape=()))
+    ),
+    (
+        [1, 2, 3], ndarray.NDArray(
+            [1, 2, 3],
+            ndarray.Indexer.make_basic(shape=(3,))
+        ),
+    ),
+    (
+        [[1, 2, 3], [4, 5, 6]], ndarray.NDArray(
+            [1, 2, 3, 4, 5, 6],
+            ndarray.Indexer.make_basic(shape=(2, 3))
+        ),
+    ),
+])
+def test_ndarray_from_values(values, expt_result):
+    result = ndarray.NDArray.from_values(values)
+    assert result.shape == expt_result.shape
+    assert all(
+        result._flat_array[i] == expt_result._flat_array[j]
+        for i, j in zip(result._indexer, expt_result._indexer)
+    )
+
+
+@pytest.mark.parametrize('array, expt_result', [
+    (
+        ndarray.NDArray([1], ndarray.Indexer.make_basic(shape=())), 1
+    ),
+    (
+        ndarray.NDArray(
+            [1, 2, 3],
+            ndarray.Indexer.make_basic(shape=(3,))
+        ), [1, 2, 3],
+    ),
+    (
+        ndarray.NDArray(
+            [1, 2, 3, 4, 5, 6],
+            ndarray.Indexer.make_basic(shape=(2, 3))
+        ), [[1, 2, 3], [4, 5, 6]],
+    ),
+])
+def test_ndarray_to_list(array, expt_result):
+    assert array.to_list() == expt_result
+
+
+@pytest.mark.parametrize('array1, array2', [
+    # 0D
+    (
+        ndarray.NDArray([], ndarray.Indexer.make_basic(shape=())),
+        ndarray.NDArray([], ndarray.Indexer.make_basic(shape=())),
+    ),
+    (
+        ndarray.NDArray([], ndarray.Indexer.make_basic(shape=())),
+        ndarray.NDArray([1, 2, 3], ndarray.Indexer.make_basic(shape=())),
+    ),
+    (
+        ndarray.NDArray([], ndarray.Indexer.make_basic(shape=())),
+        ndarray.NDArray([1, 2, 3], ndarray.Indexer.make_basic(shape=(1,))),
+    ),
+
+    # 1D
+    (
+        ndarray.NDArray([1, 2, 3], ndarray.Indexer.make_basic(shape=(3,))),
+        ndarray.NDArray([1, 2, 3], ndarray.Indexer.make_basic(shape=(3,))),
+    ),
+    (
+        ndarray.NDArray([1, 2, 3], ndarray.Indexer.make_basic(shape=(3,))),
+        ndarray.NDArray(
+            [0, 0, 1, 0, 2, 0, 3],
+            ndarray.Indexer(shape=(3,), offset=2, strides=(2,)),
+        ),
+    ),
+    (
+        ndarray.NDArray([1, 2, 3], ndarray.Indexer.make_basic(shape=(3,))),
+        ndarray.NDArray([2, 2, 3], ndarray.Indexer.make_basic(shape=(3,))),
+    ),
+    (
+        ndarray.NDArray([1, 2, 3], ndarray.Indexer.make_basic(shape=(2,))),
+        ndarray.NDArray(
+            [1, 2, 3],
+            ndarray.Indexer(shape=(2,), offset=1, strides=(1,))),
+    ),
+    (
+        ndarray.NDArray([1, 2, 3], ndarray.Indexer.make_basic(shape=(3,))),
+        ndarray.NDArray([3, 2, 1], ndarray.Indexer.make_basic(shape=(2,))),
+    ),
+    (
+        ndarray.NDArray([1, 2, 3], ndarray.Indexer.make_basic(shape=(3,))),
+        ndarray.NDArray([1, 2, 3], ndarray.Indexer.make_basic(shape=(1, 3))),
+    ),
+
+    # 2D
+    (
+        ndarray.NDArray(
+            [1, 2, 3, 4, 5, 6],
+            ndarray.Indexer.make_basic(shape=(2, 3))
+        ),
+        ndarray.NDArray(
+            [1, 2, 3, 4, 5, 6],
+            ndarray.Indexer.make_basic(shape=(2, 3))
+        ),
+    ),
+    (
+        ndarray.NDArray(
+            [1, 2, 0, 3, 4, 0],
+            ndarray.Indexer(shape=(2, 2), offset=0, strides=(3, 1))
+        ),
+        ndarray.NDArray(
+            [1, 0, 3, 2, 0, 4, 0, 0],
+            ndarray.Indexer(shape=(2, 2), offset=0, strides=(2, 3))
+        ),
+    ),
+    (
+        ndarray.NDArray(
+            [1, 2, 3, 4, 5, 6],
+            ndarray.Indexer.make_basic(shape=(3, 2))
+        ),
+        ndarray.NDArray(
+            [1, 2, 3, 4, 5, 6],
+            ndarray.Indexer.make_basic(shape=(2, 3))
+        ),
+    ),
+    (
+        ndarray.NDArray(
+            [1, 2, 3, 4, 5, 0],
+            ndarray.Indexer.make_basic(shape=(2, 3))
+        ),
+        ndarray.NDArray(
+            [1, 2, 3, 4, 5, 6],
+            ndarray.Indexer.make_basic(shape=(2, 3))
+        ),
+    ),
+    (
+        ndarray.NDArray(
+            [1, 2, 3, 4, 5, 6],
+            ndarray.Indexer.make_basic(shape=(2, 2))
+        ),
+        ndarray.NDArray(
+            [1, 2, 3, 4, 5, 6],
+            ndarray.Indexer(shape=(2, 2), offset=1, strides=(2, 1))
+        ),
+    ),
+    (
+        ndarray.NDArray([1, 2, 3, 4], ndarray.Indexer.make_basic(shape=(4,))),
+        ndarray.NDArray([1, 2, 3, 4], ndarray.Indexer.make_basic(shape=(2, 2))),
+    ),
+])
+def test_ndarray_eq(array1, array2):
+    expt_result = (
+        array1.shape == array2.shape
+        and all(
+            array1._flat_array[i1] == array2._flat_array[i2]
+            for i1, i2 in zip(array1._indexer, array2._indexer)
+        )
+    )
+    assert (array1 == array2) == expt_result
