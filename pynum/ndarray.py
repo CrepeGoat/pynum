@@ -148,6 +148,26 @@ class Indexer:
         """Calculate number of indices."""
         return functools.reduce(operator.mul, self._shape, 1)
 
+    @property
+    def min(self):
+        if not self:
+            raise ValueError
+        return self._offset + sum(
+            (i-1) * j
+            for i, j in zip(self._shape, self._strides)
+            if j < 0
+        )
+
+    @property
+    def max(self):
+        if not self:
+            raise ValueError
+        return self._offset + sum(
+            (i-1) * j
+            for i, j in zip(self._shape, self._strides)
+            if j > 0
+        )
+
     def added_dim(self, new_dim):
         """Create a copy of the indexer, adding an extra dimension."""
         if not -len(self._shape) <= new_dim <= len(self._shape):
