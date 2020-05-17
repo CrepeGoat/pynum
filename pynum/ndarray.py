@@ -77,16 +77,6 @@ class Indexer:
                 "numbers of shape dimensions and strides must be equal"
             )
 
-        if (
-            all(i != 0 for i in shape)
-            and offset + sum(
-                (i-1) * j for i, j in zip(shape, strides) if j < 0
-            ) < 0
-        ):
-            raise ValueError(
-                "resulting indices must all be positive values"
-            )
-
         self._shape = shape
         self._offset = offset
         self._strides = strides
@@ -244,6 +234,9 @@ class NDArray:
 
     def __init__(self, flat_array, indexer):
         """Construct an instance."""
+        if indexer.min < 0 or indexer.max >= len(flat_array):
+            raise ValueError
+
         self._flat_array = flat_array
         self._indexer = indexer
 
