@@ -139,8 +139,6 @@ class Indexer:
         in-1 -> array[0, 0, ..., 0, -1]
         in -> array[0, 0, ..., 1, 0]
         """
-        if not self._shape:
-            return
         for nd_index in _nd_indices(self._shape):
             yield self._offset + sum(
                 i*stride for i, stride in zip(nd_index, self._strides)
@@ -148,9 +146,7 @@ class Indexer:
 
     def __len__(self):
         """Calculate number of indices."""
-        if not self._shape:
-            return 0
-        return functools.reduce(operator.mul, self._shape)
+        return functools.reduce(operator.mul, self._shape, 1)
 
     def added_dim(self, new_dim):
         """Create a copy of the indexer, adding an extra dimension."""
