@@ -295,10 +295,6 @@ def test_indexer_sliced(indexer, index, expt_indexer):
 
 ###############################################################################
 
-
-
-###############################################################################
-
 @pytest.mark.skip('function too simple')
 def test_ndarray_init():
     pass
