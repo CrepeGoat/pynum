@@ -300,8 +300,9 @@ class NDArray:
 
     def __setitem__(self, index, value):
         """Set values to an index/slice of the data."""
-        for i, j in zip(self._indexer.sliced(index), value._indexer):
-            self._flat_array[i] = value._flat_array[j]
+        new_indexer = self._indexer.sliced(index)
+        for i, j in zip(new_indexer, _nd_indices(new_indexer._shape)):
+            self._flat_array[i] = _nd_getitem(value, j)
 
     def __len__(self):
         """Calculate number of subarrays in first dimension."""
