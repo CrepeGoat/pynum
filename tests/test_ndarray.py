@@ -553,3 +553,63 @@ def test_ndarray_eq(array1, array2):
 ])
 def test_ndarray_getitem(array, index, expt_result):
     assert array[index] == expt_result
+
+
+@pytest.mark.parametrize('array, index, value, expt_result', [
+    (
+        ndarray.NDArray.from_values(1), (), 2,
+        ndarray.NDArray.from_values(2)
+    ),
+
+    (
+        ndarray.NDArray.from_values([1, 2, 3]), (), [1, 2, 3],
+        ndarray.NDArray.from_values([1, 2, 3])
+    ),
+    (
+        ndarray.NDArray.from_values([1, 2, 3]), slice(1, None), [4, 5],
+        ndarray.NDArray.from_values([1, 4, 5])
+    ),
+    (
+        ndarray.NDArray.from_values([1, 2, 3]), 1, 4,
+        ndarray.NDArray.from_values([1, 4, 3])
+    ),
+
+    (
+        ndarray.NDArray.from_values([[1, 2, 3], [4, 5, 6]]),
+        (), [[6, 7, 8], [9, 10, 11]],
+        ndarray.NDArray.from_values([[6, 7, 8], [9, 10, 11]])
+    ),
+    (
+        ndarray.NDArray.from_values([[1, 2, 3], [4, 5, 6]]),
+        0, [7, 8, 9],
+        ndarray.NDArray.from_values([[7, 8, 9], [4, 5, 6]])
+    ),
+    (
+        ndarray.NDArray.from_values([[1, 2, 3], [4, 5, 6]]),
+        (0, Ellipsis), [7, 8, 9],
+        ndarray.NDArray.from_values([[7, 8, 9], [4, 5, 6]])
+    ),
+    (
+        ndarray.NDArray.from_values([[1, 2, 3], [4, 5, 6]]),
+        slice(1, None), [[7, 8, 9]],
+        ndarray.NDArray.from_values([[1, 2, 3], [7, 8, 9]])
+    ),
+    (
+        ndarray.NDArray.from_values([[1, 2, 3], [4, 5, 6]]),
+        (slice(None), 1), [7, 8],
+        ndarray.NDArray.from_values([[1, 7, 3], [4, 8, 6]])
+    ),
+    (
+        ndarray.NDArray.from_values([[1, 2, 3], [4, 5, 6]]),
+        (Ellipsis, 1), [7, 8],
+        ndarray.NDArray.from_values([[1, 7, 3], [4, 8, 6]])
+    ),
+    (
+        ndarray.NDArray.from_values([[1, 2, 3], [4, 5, 6]]),
+        (slice(None), slice(None, 2)), [[7, 8], [9, 10]],
+        ndarray.NDArray.from_values([[7, 8, 3], [9, 10, 6]])
+    ),
+])
+def test_ndarray_setitem(array, index, value, expt_result):
+    array[index] = value
+    assert array == expt_result
