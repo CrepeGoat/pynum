@@ -4,6 +4,50 @@ import numbers
 import operator
 
 
+def _nd_indices(shape):
+    """Generate sequence of dimension indices for a given shape."""
+    return itertools.product(*(range(i) for i in shape))
+
+
+def _nd_getitem(array, nd_index):
+    """
+    Get an item from an nd-array-like object.
+
+    Meant for use on, e.g., nested lists. Does not accept slices.
+    """
+    if not isinstance(nd_index, tuple):
+        raise ValueError
+    if not all(isinstance(idx, numbers.Integral) for idx in nd_index):
+        raise ValueError
+    return functools.reduce(operator.getitem, nd_index, array)
+
+
+def _nd_shape(array):
+    """Calculate the dimensionality of the given nested list."""
+    shape = []
+
+    while True:
+        dim_len = None  # None-len denotes scalars
+        for i, nd_index in enumerate(_nd_indices(shape)):
+            subarray = _nd_getitem(array, nd_index)
+
+            try:
+                subarray_len = len(subarray)
+            except TypeError:
+                subarray_len = None
+
+            if dim_len != subarray_len:
+                if i > 0:
+                    raise ValueError("non-uniform dimension lengths")
+                dim_len = subarray_len
+
+        if dim_len is None:
+            break
+        shape.append(dim_len)
+
+    return tuple(shape)
+
+
 class Indexer:
     """A generic indexer object."""
 
@@ -31,16 +75,6 @@ class Indexer:
         if len(shape) != len(strides):
             raise ValueError(
                 "numbers of shape dimensions and strides must be equal"
-            )
-
-        if (
-            all(i != 0 for i in shape)
-            and offset + sum(
-                (i-1) * j for i, j in zip(shape, strides) if j < 0
-            ) < 0
-        ):
-            raise ValueError(
-                "resulting indices must all be positive values"
             )
 
         self._shape = shape
@@ -95,14 +129,34 @@ class Indexer:
         in-1 -> array[0, 0, ..., 0, -1]
         in -> array[0, 0, ..., 1, 0]
         """
-        for dim_indices in itertools.product(*(range(i) for i in self._shape)):
+        for nd_index in _nd_indices(self._shape):
             yield self._offset + sum(
-                i*stride for i, stride in zip(dim_indices, self._strides)
+                i*stride for i, stride in zip(nd_index, self._strides)
             )
 
     def __len__(self):
         """Calculate number of indices."""
         return functools.reduce(operator.mul, self._shape, 1)
+
+    @property
+    def min(self):
+        if not self:
+            raise ValueError
+        return self._offset + sum(
+            (i-1) * j
+            for i, j in zip(self._shape, self._strides)
+            if j < 0
+        )
+
+    @property
+    def max(self):
+        if not self:
+            raise ValueError
+        return self._offset + sum(
+            (i-1) * j
+            for i, j in zip(self._shape, self._strides)
+            if j > 0
+        )
 
     def added_dim(self, new_dim):
         """Create a copy of the indexer, adding an extra dimension."""
@@ -180,14 +234,85 @@ class NDArray:
 
     def __init__(self, flat_array, indexer):
         """Construct an instance."""
+        if indexer.min < 0 or indexer.max >= len(flat_array):
+            raise ValueError
+
         self._flat_array = flat_array
         self._indexer = indexer
 
+    @classmethod
+    def from_values(cls, values, immutable=False):
+        """Create a new ndarray from a nested iterable."""
+        shape = _nd_shape(values)
+
+        FlatType = (tuple if immutable else list)
+        if shape:
+            flat_array = FlatType(
+                _nd_getitem(values, nd_index)
+                for nd_index in _nd_indices(shape)
+            )
+        else:
+            flat_array = FlatType([values])
+
+        return cls(flat_array, indexer=Indexer.make_basic(shape=shape))
+
+    def to_list(self):
+        """Convert array into equivalent nested lists."""
+        if not self.shape:
+            return self._flat_array[self._indexer._offset]
+        return [self.slice[i].to_list() for i in range(len(self))]
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({repr(self.to_list())})'
+
+    def __eq__(self, other):
+        """Test for equality."""
+        try:
+            return (
+                self.shape == _nd_shape(other)
+            ) and all(s_item == o_item for s_item, o_item in zip(
+                (self._flat_array[i] for i in self._indexer),
+                (_nd_getitem(other, idx) for idx in _nd_indices(self.shape)),
+            ))
+        except TypeError:
+            return False
+
+    @property
+    def slice(self):
+        """Index/slice the data."""
+        class Slice:
+            """
+            Alternative indexer for ndarrays.
+
+            Keeps the result as an NDArray, even if it's a 0D-array.
+            """
+
+            def __getitem__(_, index):
+                """Index/slice the data."""
+                return NDArray(self._flat_array, self._indexer.sliced(index))
+
+        return Slice()
+
     def __getitem__(self, index):
         """Index/slice the data."""
-        return NDArray(self._flat_array, self._indexer.sliced(index))
+        result = NDArray(self._flat_array, self._indexer.sliced(index))
+        if not result.shape:
+            return result._flat_array[result._indexer._offset]
+        return result
 
     def __setitem__(self, index, value):
         """Set values to an index/slice of the data."""
-        for i, j in zip(self._indexer.sliced(index), value._indexer):
-            self._flat_array[i] = value._flat_array[j]
+        new_indexer = self._indexer.sliced(index)
+        for i, j in zip(new_indexer, _nd_indices(new_indexer._shape)):
+            self._flat_array[i] = _nd_getitem(value, j)
+
+    def __len__(self):
+        """Calculate number of subarrays in first dimension."""
+        if not self.shape:
+            raise TypeError
+        return self.shape[0]
+
+    @property
+    def shape(self):
+        """Get array dimensionality."""
+        return self._indexer._shape
