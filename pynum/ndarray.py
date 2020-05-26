@@ -268,7 +268,9 @@ class NDArray:
     def __eq__(self, other):
         """Test for equality."""
         try:
-            return all(s_item == o_item for s_item, o_item in zip(
+            return (
+                self.shape == _nd_shape(other)
+            ) and all(s_item == o_item for s_item, o_item in zip(
                 (self._flat_array[i] for i in self._indexer),
                 (_nd_getitem(other, idx) for idx in _nd_indices(self.shape)),
             ))
@@ -306,6 +308,8 @@ class NDArray:
 
     def __len__(self):
         """Calculate number of subarrays in first dimension."""
+        if not self.shape:
+            raise TypeError
         return self.shape[0]
 
     @property
