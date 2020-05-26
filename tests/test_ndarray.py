@@ -496,6 +496,16 @@ def test_ndarray_to_list(array, expt_result):
         ndarray.NDArray([1, 2, 3, 4], ndarray.Indexer.make_basic(shape=(4,))),
         ndarray.NDArray([1, 2, 3, 4], ndarray.Indexer.make_basic(shape=(2, 2))),
     ),
+    (
+        ndarray.NDArray(
+            [1, 2, 3, 4, 5, 6],
+            ndarray.Indexer(shape=(2, 2), offset=0, strides=(3, 1))
+        ),
+        ndarray.NDArray(
+            [1, 2, 3, 4, 5, 6],
+            ndarray.Indexer.make_basic(shape=(2, 3))
+        ),
+    ),
 ])
 def test_ndarray_eq(array1, array2):
     expt_result = (
