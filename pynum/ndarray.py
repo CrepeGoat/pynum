@@ -337,6 +337,12 @@ class NDArray:
 
         return cls(flat_array, indexer=Indexer.make_basic(shape=shape))
 
+    @classmethod
+    def as_array(cls, values):
+        if isinstance(values, cls):
+            return values
+        return cls.from_values(values)
+
     def to_list(self):
         """Convert array into equivalent nested lists."""
         if not self.shape:
@@ -384,8 +390,13 @@ class NDArray:
     def __setitem__(self, index, value):
         """Set values to an index/slice of the data."""
         new_indexer = self._indexer.sliced(index)
-        for i, j in zip(new_indexer, _nd_indices(new_indexer._shape)):
-            self._flat_array[i] = _nd_getitem(value, j)
+        value_array = self.__class__.as_array(value)
+        value_array._indexer = value_array._indexer.broadcasted_to(
+            new_indexer._shape
+        )
+
+        for i, j in zip(new_indexer, value_array._indexer):
+            self._flat_array[i] = value_array._flat_array[j]
 
     def __len__(self):
         """Calculate number of subarrays in first dimension."""
