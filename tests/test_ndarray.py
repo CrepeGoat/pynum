@@ -293,6 +293,77 @@ def test_indexer_sliced(indexer, index, expt_indexer):
     assert indexer.sliced(index) == expt_indexer
 
 
+def test_indexer_mutually_broadcasted():
+    idxr1 = ndarray.Indexer.make_basic(shape=(1, 3))
+    idxr2 = ndarray.Indexer.make_basic(shape=(5, 2, 1))
+
+    new_idxr1, new_idxr2 = ndarray.Indexer.mutually_broadcasted(idxr1, idxr2)
+
+    assert new_idxr1._shape == new_idxr2._shape == (5, 2, 3)
+    assert all(
+        new_idxr1.sliced((i, slice(j, j+1), slice(None))) == idxr1
+        for i in range(5)
+        for j in range(2)
+    )
+    assert all(
+        new_idxr2.sliced((slice(None), slice(None), slice(i, i+1))) == idxr2
+        for i in range(3)
+    )
+
+
+@pytest.mark.parametrize('idxr1, idxr2, expt_error', [
+    (ndarray.Indexer.make_basic(shape=(1, 2)), 1, TypeError),
+    ([1, 2, 3], ndarray.Indexer.make_basic(shape=(1, 2)), TypeError),
+
+    (
+        ndarray.Indexer.make_basic(shape=(2, 3, 4)),
+        ndarray.Indexer.make_basic(shape=(4, 6)),
+        ValueError,
+    ),
+    (
+        ndarray.Indexer.make_basic(shape=(1, 2, 3)),
+        ndarray.Indexer.make_basic(shape=(6,)),
+        ValueError,
+    ),
+    (
+        ndarray.Indexer.make_basic(shape=(1, 2)),
+        ndarray.Indexer.make_basic(shape=(3, 4)),
+        ValueError,
+    ),
+])
+def test_indexer_mutually_broadcasted_raises(idxr1, idxr2, expt_error):
+    with pytest.raises(expt_error):
+        ndarray.Indexer.mutually_broadcasted(idxr1, idxr2)
+
+
+def test_indexer_broadcasted_to():
+    idxr_sub = ndarray.Indexer.make_basic(shape=(3, 1))
+    dom_shape = (5, 3, 2)
+
+    new_idxr_sub = idxr_sub.broadcasted_to(dom_shape)
+
+    assert new_idxr_sub._shape == dom_shape
+    assert all(
+        new_idxr_sub.sliced((i, slice(None), slice(j, j+1))) == idxr_sub
+        for i in range(5)
+        for j in range(2)
+    )
+
+
+@pytest.mark.parametrize('idxr_sub, new_shape, expt_error', [
+    (ndarray.Indexer.make_basic(shape=(1, 2)), 1, TypeError),
+
+    (ndarray.Indexer.make_basic(shape=(4, 6)), (2, 3, 4), ValueError),
+    (ndarray.Indexer.make_basic(shape=(6,)), (1, 2, 3), ValueError),
+    (ndarray.Indexer.make_basic(shape=(1, 2)), (3, 4), ValueError),
+    (ndarray.Indexer.make_basic(shape=(1, 2)), (3, 1), ValueError),
+])
+def test_indexer_broadcasted_to_raises(idxr_sub, new_shape, expt_error):
+    with pytest.raises(expt_error):
+        idxr_sub.broadcasted_to(new_shape)
+
+
+
 ###############################################################################
 
 @pytest.mark.skip('function too simple')
