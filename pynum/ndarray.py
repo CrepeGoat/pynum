@@ -226,6 +226,87 @@ class Indexer:
 
         return result
 
+    @classmethod
+    def mutually_broadcasted(cls, indexer1, indexer2):
+        """Make two indexer objects broadcasted to the same shape."""
+        if not isinstance(indexer1, cls) or not isinstance(indexer2, cls):
+            raise TypeError
+
+        shape1 = list(indexer1._shape)
+        strides1 = list(indexer1._strides)
+
+        shape2 = list(indexer2._shape)
+        strides2 = list(indexer2._strides)
+
+        ndim_diff = len(shape2) - len(shape1)
+        if ndim_diff >= 0:
+            shape1 = ndim_diff*[1] + shape1
+            strides1 = ndim_diff*[1] + strides1
+        else:
+            shape2 = (-ndim_diff)*[1] + shape2
+            strides2 = (-ndim_diff)*[1] + strides2
+        assert len(shape1) == len(shape2) == len(strides1) == len(strides2)
+
+        for i in range(len(shape1))[::-1]:
+            dim1 = shape1[i]
+            dim2 = shape2[i]
+            if dim1 == dim2:
+                continue
+            if dim1 == 1:
+                shape1[i] = dim2
+                strides1[i] = 0
+            elif dim2 == 1:
+                shape2[i] = dim1
+                strides2[i] = 0
+            else:
+                raise ValueError
+
+        result1 = cls(
+            shape=shape1,
+            offset=indexer1._offset,
+            strides=strides1,
+        )
+        result2 = cls(
+            shape=shape2,
+            offset=indexer2._offset,
+            strides=strides2,
+        )
+
+        return result1, result2
+
+    def broadcasted_to(self, new_shape):
+        """Copy this indexer object broadcasted to the given shape."""
+        if not isinstance(new_shape, tuple):
+            raise TypeError
+
+        shape_self = list(self._shape)
+        strides_self = list(self._strides)
+
+        ndim_diff = len(new_shape) - len(shape_self)
+        if ndim_diff < 0:
+            raise ValueError
+        shape_self = ndim_diff*[1] + shape_self
+        strides_self = ndim_diff*[1] + strides_self
+        assert len(shape_self) == len(strides_self) == len(new_shape)
+
+        for i in range(len(shape_self))[::-1]:
+            dim_self, dim_other = shape_self[i], new_shape[i]
+            if dim_self == dim_other:
+                continue
+            if dim_self != 1:
+                raise ValueError
+
+            shape_self[i] = dim_other
+            strides_self[i] = 0
+
+        result = self.__class__(
+            shape=shape_self,
+            offset=self._offset,
+            strides=strides_self,
+        )
+
+        return result
+
 
 class NDArray:
     """A pure-python version of the numpy ndarray."""
@@ -255,6 +336,12 @@ class NDArray:
             flat_array = FlatType([values])
 
         return cls(flat_array, indexer=Indexer.make_basic(shape=shape))
+
+    @classmethod
+    def as_array(cls, values):
+        if isinstance(values, cls):
+            return values
+        return cls.from_values(values)
 
     def to_list(self):
         """Convert array into equivalent nested lists."""
@@ -303,8 +390,13 @@ class NDArray:
     def __setitem__(self, index, value):
         """Set values to an index/slice of the data."""
         new_indexer = self._indexer.sliced(index)
-        for i, j in zip(new_indexer, _nd_indices(new_indexer._shape)):
-            self._flat_array[i] = _nd_getitem(value, j)
+        value_array = self.__class__.as_array(value)
+        value_array._indexer = value_array._indexer.broadcasted_to(
+            new_indexer._shape
+        )
+
+        for i, j in zip(new_indexer, value_array._indexer):
+            self._flat_array[i] = value_array._flat_array[j]
 
     def __len__(self):
         """Calculate number of subarrays in first dimension."""
