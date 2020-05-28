@@ -1,3 +1,5 @@
+import operator
+
 from pynum.indexer import _nd_indices, _nd_getitem, _nd_shape, Indexer
 
 
@@ -101,3 +103,144 @@ class NDArray:
     def shape(self):
         """Get array dimensionality."""
         return self._indexer._shape
+
+    # -------------------------------------------------------------------------
+
+    @classmethod
+    def _applied_elementwise(cls, op, values1, values2):
+        """Apply operations elementwise between two arrays."""
+        array1 = cls.as_array(values1)
+        array2 = cls.as_array(values2)
+
+        idxr1, idxr2 = Indexer.mutually_broadcasted(
+            array1._indexer, array2._indexer
+        )
+
+        return cls(
+            flat_array=[
+                op(array1._flat_array[i1], array2._flat_array[i2])
+                for i1, i2 in zip(idxr1, idxr2)
+            ],
+            indexer=Indexer.make_basic(idxr1._shape),
+        )
+
+    def _modified_elementwise(self, op, values):
+        """Apply assignment operations elementwise on this array."""
+        value_array = self.__class__.as_array(values)
+        value_array._indexer = value_array._indexer.broadcasted_to(
+            self._indexer._shape
+        )
+
+        for i, j in zip(self._indexer, value_array._indexer):
+            self._flat_array[i] = op(
+                self._flat_array[i],
+                value_array._flat_array[j]
+            )
+
+    def __add__(self, rhs):
+        return self._applied_elementwise(operator.add, self, rhs)
+
+    def __radd__(self, rhs):
+        return self._applied_elementwise(operator.add, rhs, self)
+
+    def __iadd__(self, rhs):
+        return self._modified_elementwise(operator.iadd, rhs)
+
+    def __sub__(self, rhs):
+        return self._applied_elementwise(operator.sub, self, rhs)
+
+    def __rsub__(self, rhs):
+        return self._applied_elementwise(operator.sub, rhs, self)
+
+    def __isub__(self, rhs):
+        return self._modified_elementwise(operator.isub, rhs)
+
+    def __mul__(self, rhs):
+        return self._applied_elementwise(operator.mul, self, rhs)
+
+    def __rmul__(self, rhs):
+        return self._applied_elementwise(operator.mul, rhs, self)
+
+    def __imul__(self, rhs):
+        return self._modified_elementwise(operator.imul, rhs)
+
+    def __truediv__(self, rhs):
+        return self._applied_elementwise(operator.truediv, self, rhs)
+
+    def __rtruediv__(self, rhs):
+        return self._applied_elementwise(operator.truediv, rhs, self)
+
+    def __itruediv__(self, rhs):
+        return self._modified_elementwise(operator.itruediv, rhs)
+
+    def __floordiv__(self, rhs):
+        return self._applied_elementwise(operator.floordiv, self, rhs)
+
+    def __rfloordiv__(self, rhs):
+        return self._applied_elementwise(operator.floordiv, rhs, self)
+
+    def __ifloordiv__(self, rhs):
+        return self._modified_elementwise(operator.ifloordiv, rhs)
+
+    def __mod__(self, rhs):
+        return self._applied_elementwise(operator.mod, self, rhs)
+
+    def __rmod__(self, rhs):
+        return self._applied_elementwise(operator.mod, rhs, self)
+
+    def __imod__(self, rhs):
+        return self._modified_elementwise(operator.imod, rhs)
+
+    def __pow__(self, rhs):
+        return self._applied_elementwise(operator.pow, self, rhs)
+
+    def __rpow__(self, rhs):
+        return self._applied_elementwise(operator.pow, rhs, self)
+
+    def __ipow__(self, rhs):
+        return self._modified_elementwise(operator.ipow, rhs)
+
+    def __lshift__(self, rhs):
+        return self._applied_elementwise(operator.lshift, self, rhs)
+
+    def __rlshift__(self, rhs):
+        return self._applied_elementwise(operator.lshift, rhs, self)
+
+    def __ilshift__(self, rhs):
+        return self._modified_elementwise(operator.ilshift, rhs)
+
+    def __rshift__(self, rhs):
+        return self._applied_elementwise(operator.rshift, self, rhs)
+
+    def __rrshift__(self, rhs):
+        return self._applied_elementwise(operator.rshift, rhs, self)
+
+    def __irshift__(self, rhs):
+        return self._modified_elementwise(operator.irshift, rhs)
+
+    def __and__(self, rhs):
+        return self._applied_elementwise(operator.and_, self, rhs)
+
+    def __rand__(self, rhs):
+        return self._applied_elementwise(operator.and_, rhs, self)
+
+    def __iand__(self, rhs):
+        return self._modified_elementwise(operator.iand, rhs)
+
+    def __xor__(self, rhs):
+        return self._applied_elementwise(operator.xor, self, rhs)
+
+    def __rxor__(self, rhs):
+        return self._applied_elementwise(operator.xor, rhs, self)
+
+    def __ixor__(self, rhs):
+        return self._modified_elementwise(operator.ixor, rhs)
+
+    def __or__(self, rhs):
+        return self._applied_elementwise(operator.or_, self, rhs)
+
+    def __ror__(self, rhs):
+        return self._applied_elementwise(operator.or_, rhs, self)
+
+    def __ior__(self, rhs):
+        return self._modified_elementwise(operator.ior, rhs)
