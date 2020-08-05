@@ -137,6 +137,24 @@ class NDArray:
                 value_array._flat_array[j]
             )
 
+    def __lt__(self, rhs):
+        return self._applied_elementwise(operator.lt, self, rhs)
+
+    def __le__(self, rhs):
+        return self._applied_elementwise(operator.le, self, rhs)
+
+    def eq(self, rhs):
+        return self._applied_elementwise(operator.eq, self, rhs)
+
+    def __ne__(self, rhs):
+        return self._applied_elementwise(operator.ne, self, rhs)
+
+    def __ge__(self, rhs):
+        return self._applied_elementwise(operator.ge, self, rhs)
+
+    def __gt__(self, rhs):
+        return self._applied_elementwise(operator.gt, self, rhs)
+
     def __add__(self, rhs):
         return self._applied_elementwise(operator.add, self, rhs)
 

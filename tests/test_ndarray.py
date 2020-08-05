@@ -1,5 +1,7 @@
 import pytest
 
+import operator
+
 from pynum import ndarray, indexer
 
 
@@ -29,7 +31,6 @@ def test_ndarray_init():
         [1, 2, 3], indexer.Indexer(shape=(3,), offset=0, strides=(2,)),
         ValueError
     ),
-
     (
         [1, 2, 3, 4, 5, 6],
         indexer.Indexer(shape=(3, 3,), offset=0, strides=(3, 1,)),
@@ -278,7 +279,6 @@ def test_ndarray_getitem(array, index, expt_result):
         ndarray.NDArray.from_values(1), (), 2,
         ndarray.NDArray.from_values(2)
     ),
-
     (
         ndarray.NDArray.from_values([1, 2, 3]), (), [1, 2, 3],
         ndarray.NDArray.from_values([1, 2, 3])
@@ -346,3 +346,169 @@ def test_ndarray_getitem(array, index, expt_result):
 def test_ndarray_setitem(array, index, value, expt_result):
     array[index] = value
     assert array == expt_result
+
+
+@pytest.mark.parametrize('op, array1, array2, expt_result', [
+    (
+        operator.add,
+        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
+        [[17, 19, 23], [29, 31, 37]],
+        ndarray.NDArray.from_values([[19, 22, 28], [36, 42, 50]]),
+    ),
+    (
+        operator.add,
+        [[2, 3, 5], [7, 11, 13]],
+        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
+        ndarray.NDArray.from_values([[19, 22, 28], [36, 42, 50]]),
+    ),
+    (
+        operator.sub,
+        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
+        [[17, 19, 23], [29, 31, 37]],
+        ndarray.NDArray.from_values([[-15, -16, -18], [-22, -20, -24]]),
+    ),
+    (
+        operator.sub,
+        [[2, 3, 5], [7, 11, 13]],
+        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
+        ndarray.NDArray.from_values([[-15, -16, -18], [-22, -20, -24]]),
+    ),
+    (
+        operator.mul,
+        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
+        [[17, 19, 23], [29, 31, 37]],
+        ndarray.NDArray.from_values([[34, 57, 115], [203, 341, 481]]),
+    ),
+    (
+        operator.mul,
+        [[2, 3, 5], [7, 11, 13]],
+        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
+        ndarray.NDArray.from_values([[34, 57, 115], [203, 341, 481]]),
+    ),
+    (
+        operator.truediv,
+        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
+        [[17, 19, 23], [29, 31, 37]],
+        ndarray.NDArray.from_values([
+            [0.11764705882352941, 0.15789473684210525, 0.21739130434782608],
+            [0.2413793103448276, 0.3548387096774194, 0.35135135135135137],
+        ]),
+    ),
+    (
+        operator.truediv,
+        [[2, 3, 5], [7, 11, 13]],
+        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
+        ndarray.NDArray.from_values([
+            [0.11764705882352941, 0.15789473684210525, 0.21739130434782608],
+            [0.2413793103448276, 0.3548387096774194, 0.35135135135135137],
+        ]),
+    ),
+    (
+        operator.floordiv,
+        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
+        [[2, 3, 5], [7, 11, 13]],
+        ndarray.NDArray.from_values([[8, 6, 4], [4, 2, 2]]),
+    ),
+    (
+        operator.floordiv,
+        [[17, 19, 23], [29, 31, 37]],
+        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
+        ndarray.NDArray.from_values([[8, 6, 4], [4, 2, 2]]),
+    ),
+    (
+        operator.mod,
+        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
+        [[17, 19, 23], [29, 31, 37]],
+        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
+    ),
+    (
+        operator.mod,
+        [[2, 3, 5], [7, 11, 13]],
+        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
+        ndarray.NDArray.from_values([[1, 1, 3], [1, 9, 11]]),
+    ),
+    (
+        operator.pow,
+        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
+        [[17, 19, 23], [29, 31, 37]],
+        ndarray.NDArray.from_values([
+            [131072, 1162261467, 11920928955078125],
+            [
+                3219905755813179726837607,
+                191943424957750480504146841291811,
+                164400841185494513395503358052498933338333,
+            ],
+        ]),
+    ),
+    (
+        operator.pow,
+        [[2, 3, 5], [7, 11, 13]],
+        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
+        ndarray.NDArray.from_values([
+            [289, 6859, 6436343],
+            [17249876309, 25408476896404831, 243569224216081305397],
+        ]),
+    ),
+    (
+        operator.lshift,
+        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
+        [[17, 19, 23], [29, 31, 37]],
+        ndarray.NDArray.from_values([[-15, -16, -18], [-22, -20, -24]]),
+    ),
+    (
+        operator.lshift,
+        [[2, 3, 5], [7, 11, 13]],
+        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
+        ndarray.NDArray.from_values([[15, 16, 18], [22, 20, 24]]),
+    ),
+    (
+        operator.rshift,
+        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
+        [[17, 19, 23], [29, 31, 37]],
+        ndarray.NDArray.from_values([[-15, -16, -18], [-22, -20, -24]]),
+    ),
+    (
+        operator.rshift,
+        [[2, 3, 5], [7, 11, 13]],
+        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
+        ndarray.NDArray.from_values([[15, 16, 18], [22, 20, 24]]),
+    ),
+    (
+        operator.and_,
+        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
+        [[17, 19, 23], [29, 31, 37]],
+        ndarray.NDArray.from_values([[-15, -16, -18], [-22, -20, -24]]),
+    ),
+    (
+        operator.and_,
+        [[2, 3, 5], [7, 11, 13]],
+        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
+        ndarray.NDArray.from_values([[15, 16, 18], [22, 20, 24]]),
+    ),
+    (
+        operator.xor,
+        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
+        [[17, 19, 23], [29, 31, 37]],
+        ndarray.NDArray.from_values([[-15, -16, -18], [-22, -20, -24]]),
+    ),
+    (
+        operator.xor,
+        [[2, 3, 5], [7, 11, 13]],
+        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
+        ndarray.NDArray.from_values([[15, 16, 18], [22, 20, 24]]),
+    ),
+    (
+        operator.or_,
+        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
+        [[17, 19, 23], [29, 31, 37]],
+        ndarray.NDArray.from_values([[-15, -16, -18], [-22, -20, -24]]),
+    ),
+    (
+        operator.or_,
+        [[2, 3, 5], [7, 11, 13]],
+        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
+        ndarray.NDArray.from_values([[15, 16, 18], [22, 20, 24]]),
+    ),
+])
+def test_ndarray_operators(op, array1, array2, expt_result):
+    assert op(array1, array2) == expt_result
