@@ -124,7 +124,7 @@ class NDArray:
             indexer=Indexer.make_basic(idxr1._shape),
         )
 
-    def _modified_elementwise(self, op, values):
+    def _modify_elementwise(self, op, values):
         """Apply assignment operations elementwise on this array."""
         value_array = self.__class__.as_array(values)
         value_array._indexer = value_array._indexer.broadcasted_to(
@@ -162,7 +162,7 @@ class NDArray:
         return self._applied_elementwise(operator.add, rhs, self)
 
     def __iadd__(self, rhs):
-        return self._modified_elementwise(operator.iadd, rhs)
+        return self._modify_elementwise(operator.iadd, rhs)
 
     def __sub__(self, rhs):
         return self._applied_elementwise(operator.sub, self, rhs)
@@ -171,7 +171,7 @@ class NDArray:
         return self._applied_elementwise(operator.sub, rhs, self)
 
     def __isub__(self, rhs):
-        return self._modified_elementwise(operator.isub, rhs)
+        return self._modify_elementwise(operator.isub, rhs)
 
     def __mul__(self, rhs):
         return self._applied_elementwise(operator.mul, self, rhs)
@@ -180,7 +180,7 @@ class NDArray:
         return self._applied_elementwise(operator.mul, rhs, self)
 
     def __imul__(self, rhs):
-        return self._modified_elementwise(operator.imul, rhs)
+        return self._modify_elementwise(operator.imul, rhs)
 
     def __truediv__(self, rhs):
         return self._applied_elementwise(operator.truediv, self, rhs)
@@ -189,7 +189,7 @@ class NDArray:
         return self._applied_elementwise(operator.truediv, rhs, self)
 
     def __itruediv__(self, rhs):
-        return self._modified_elementwise(operator.itruediv, rhs)
+        return self._modify_elementwise(operator.itruediv, rhs)
 
     def __floordiv__(self, rhs):
         return self._applied_elementwise(operator.floordiv, self, rhs)
@@ -198,7 +198,7 @@ class NDArray:
         return self._applied_elementwise(operator.floordiv, rhs, self)
 
     def __ifloordiv__(self, rhs):
-        return self._modified_elementwise(operator.ifloordiv, rhs)
+        return self._modify_elementwise(operator.ifloordiv, rhs)
 
     def __mod__(self, rhs):
         return self._applied_elementwise(operator.mod, self, rhs)
@@ -207,7 +207,7 @@ class NDArray:
         return self._applied_elementwise(operator.mod, rhs, self)
 
     def __imod__(self, rhs):
-        return self._modified_elementwise(operator.imod, rhs)
+        return self._modify_elementwise(operator.imod, rhs)
 
     def __pow__(self, rhs):
         return self._applied_elementwise(operator.pow, self, rhs)
@@ -216,7 +216,7 @@ class NDArray:
         return self._applied_elementwise(operator.pow, rhs, self)
 
     def __ipow__(self, rhs):
-        return self._modified_elementwise(operator.ipow, rhs)
+        return self._modify_elementwise(operator.ipow, rhs)
 
     def __lshift__(self, rhs):
         return self._applied_elementwise(operator.lshift, self, rhs)
@@ -225,7 +225,7 @@ class NDArray:
         return self._applied_elementwise(operator.lshift, rhs, self)
 
     def __ilshift__(self, rhs):
-        return self._modified_elementwise(operator.ilshift, rhs)
+        return self._modify_elementwise(operator.ilshift, rhs)
 
     def __rshift__(self, rhs):
         return self._applied_elementwise(operator.rshift, self, rhs)
@@ -234,7 +234,7 @@ class NDArray:
         return self._applied_elementwise(operator.rshift, rhs, self)
 
     def __irshift__(self, rhs):
-        return self._modified_elementwise(operator.irshift, rhs)
+        return self._modify_elementwise(operator.irshift, rhs)
 
     def __and__(self, rhs):
         return self._applied_elementwise(operator.and_, self, rhs)
@@ -243,7 +243,7 @@ class NDArray:
         return self._applied_elementwise(operator.and_, rhs, self)
 
     def __iand__(self, rhs):
-        return self._modified_elementwise(operator.iand, rhs)
+        return self._modify_elementwise(operator.iand, rhs)
 
     def __xor__(self, rhs):
         return self._applied_elementwise(operator.xor, self, rhs)
@@ -252,7 +252,7 @@ class NDArray:
         return self._applied_elementwise(operator.xor, rhs, self)
 
     def __ixor__(self, rhs):
-        return self._modified_elementwise(operator.ixor, rhs)
+        return self._modify_elementwise(operator.ixor, rhs)
 
     def __or__(self, rhs):
         return self._applied_elementwise(operator.or_, self, rhs)
@@ -261,4 +261,4 @@ class NDArray:
         return self._applied_elementwise(operator.or_, rhs, self)
 
     def __ior__(self, rhs):
-        return self._modified_elementwise(operator.ior, rhs)
+        return self._modify_elementwise(operator.ior, rhs)

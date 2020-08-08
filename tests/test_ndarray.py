@@ -1,6 +1,8 @@
-import pytest
-
 import operator
+
+import pytest
+from unittest import mock
+import sympy as sp
 
 from pynum import ndarray, indexer
 
@@ -348,167 +350,117 @@ def test_ndarray_setitem(array, index, value, expt_result):
     assert array == expt_result
 
 
-@pytest.mark.parametrize('op, array1, array2, expt_result', [
-    (
-        operator.add,
-        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
-        [[17, 19, 23], [29, 31, 37]],
-        ndarray.NDArray.from_values([[19, 22, 28], [36, 42, 50]]),
-    ),
-    (
-        operator.add,
-        [[2, 3, 5], [7, 11, 13]],
-        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
-        ndarray.NDArray.from_values([[19, 22, 28], [36, 42, 50]]),
-    ),
-    (
-        operator.sub,
-        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
-        [[17, 19, 23], [29, 31, 37]],
-        ndarray.NDArray.from_values([[-15, -16, -18], [-22, -20, -24]]),
-    ),
-    (
-        operator.sub,
-        [[2, 3, 5], [7, 11, 13]],
-        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
-        ndarray.NDArray.from_values([[-15, -16, -18], [-22, -20, -24]]),
-    ),
-    (
-        operator.mul,
-        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
-        [[17, 19, 23], [29, 31, 37]],
-        ndarray.NDArray.from_values([[34, 57, 115], [203, 341, 481]]),
-    ),
-    (
-        operator.mul,
-        [[2, 3, 5], [7, 11, 13]],
-        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
-        ndarray.NDArray.from_values([[34, 57, 115], [203, 341, 481]]),
-    ),
-    (
-        operator.truediv,
-        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
-        [[17, 19, 23], [29, 31, 37]],
-        ndarray.NDArray.from_values([
-            [0.11764705882352941, 0.15789473684210525, 0.21739130434782608],
-            [0.2413793103448276, 0.3548387096774194, 0.35135135135135137],
-        ]),
-    ),
-    (
-        operator.truediv,
-        [[2, 3, 5], [7, 11, 13]],
-        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
-        ndarray.NDArray.from_values([
-            [0.11764705882352941, 0.15789473684210525, 0.21739130434782608],
-            [0.2413793103448276, 0.3548387096774194, 0.35135135135135137],
-        ]),
-    ),
-    (
-        operator.floordiv,
-        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
-        [[2, 3, 5], [7, 11, 13]],
-        ndarray.NDArray.from_values([[8, 6, 4], [4, 2, 2]]),
-    ),
-    (
-        operator.floordiv,
-        [[17, 19, 23], [29, 31, 37]],
-        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
-        ndarray.NDArray.from_values([[8, 6, 4], [4, 2, 2]]),
-    ),
-    (
-        operator.mod,
-        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
-        [[17, 19, 23], [29, 31, 37]],
-        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
-    ),
-    (
-        operator.mod,
-        [[2, 3, 5], [7, 11, 13]],
-        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
-        ndarray.NDArray.from_values([[1, 1, 3], [1, 9, 11]]),
-    ),
-    (
-        operator.pow,
-        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
-        [[17, 19, 23], [29, 31, 37]],
-        ndarray.NDArray.from_values([
-            [131072, 1162261467, 11920928955078125],
-            [
-                3219905755813179726837607,
-                191943424957750480504146841291811,
-                164400841185494513395503358052498933338333,
-            ],
-        ]),
-    ),
-    (
-        operator.pow,
-        [[2, 3, 5], [7, 11, 13]],
-        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
-        ndarray.NDArray.from_values([
-            [289, 6859, 6436343],
-            [17249876309, 25408476896404831, 243569224216081305397],
-        ]),
-    ),
-    (
-        operator.lshift,
-        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
-        [[17, 19, 23], [29, 31, 37]],
-        ndarray.NDArray.from_values([[-15, -16, -18], [-22, -20, -24]]),
-    ),
-    (
-        operator.lshift,
-        [[2, 3, 5], [7, 11, 13]],
-        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
-        ndarray.NDArray.from_values([[15, 16, 18], [22, 20, 24]]),
-    ),
-    (
-        operator.rshift,
-        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
-        [[17, 19, 23], [29, 31, 37]],
-        ndarray.NDArray.from_values([[-15, -16, -18], [-22, -20, -24]]),
-    ),
-    (
-        operator.rshift,
-        [[2, 3, 5], [7, 11, 13]],
-        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
-        ndarray.NDArray.from_values([[15, 16, 18], [22, 20, 24]]),
-    ),
-    (
-        operator.and_,
-        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
-        [[17, 19, 23], [29, 31, 37]],
-        ndarray.NDArray.from_values([[-15, -16, -18], [-22, -20, -24]]),
-    ),
-    (
-        operator.and_,
-        [[2, 3, 5], [7, 11, 13]],
-        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
-        ndarray.NDArray.from_values([[15, 16, 18], [22, 20, 24]]),
-    ),
-    (
-        operator.xor,
-        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
-        [[17, 19, 23], [29, 31, 37]],
-        ndarray.NDArray.from_values([[-15, -16, -18], [-22, -20, -24]]),
-    ),
-    (
-        operator.xor,
-        [[2, 3, 5], [7, 11, 13]],
-        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
-        ndarray.NDArray.from_values([[15, 16, 18], [22, 20, 24]]),
-    ),
-    (
-        operator.or_,
-        ndarray.NDArray.from_values([[2, 3, 5], [7, 11, 13]]),
-        [[17, 19, 23], [29, 31, 37]],
-        ndarray.NDArray.from_values([[-15, -16, -18], [-22, -20, -24]]),
-    ),
-    (
-        operator.or_,
-        [[2, 3, 5], [7, 11, 13]],
-        ndarray.NDArray.from_values([[17, 19, 23], [29, 31, 37]]),
-        ndarray.NDArray.from_values([[15, 16, 18], [22, 20, 24]]),
-    ),
+def test_ndarray_applied_elementwise():
+    op = sp.Function("f")
+    array1 = [sp.symbols("x0:3"), sp.symbols("x3:6")]
+    array2 = [sp.symbols("y0:3"), sp.symbols("y3:6")]
+    expt_result = ndarray.NDArray.from_values([
+        [
+            op(array1[0][0], array2[0][0]),
+            op(array1[0][1], array2[0][1]),
+            op(array1[0][2], array2[0][2]),
+        ],
+        [
+            op(array1[1][0], array2[1][0]),
+            op(array1[1][1], array2[1][1]),
+            op(array1[1][2], array2[1][2]),
+        ],
+    ])
+
+    result = ndarray.NDArray._applied_elementwise(op, array1, array2)
+    assert result == expt_result
+
+
+@pytest.mark.parametrize('method, operator', [
+    (ndarray.NDArray.__lt__, operator.lt),
+    (ndarray.NDArray.__le__, operator.le),
+    (ndarray.NDArray.eq, operator.eq),
+    (ndarray.NDArray.__ne__, operator.ne),
+    (ndarray.NDArray.__ge__, operator.ge),
+    (ndarray.NDArray.__gt__, operator.gt),
+    (ndarray.NDArray.__add__, operator.add),
+    (ndarray.NDArray.__sub__, operator.sub),
+    (ndarray.NDArray.__mul__, operator.mul),
+    (ndarray.NDArray.__truediv__, operator.truediv),
+    (ndarray.NDArray.__floordiv__, operator.floordiv),
+    (ndarray.NDArray.__mod__, operator.mod),
+    (ndarray.NDArray.__pow__, operator.pow),
+    (ndarray.NDArray.__lshift__, operator.lshift),
+    (ndarray.NDArray.__rshift__, operator.rshift),
+    (ndarray.NDArray.__and__, operator.and_),
+    (ndarray.NDArray.__xor__, operator.xor),
+    (ndarray.NDArray.__or__, operator.or_),
 ])
-def test_ndarray_operators(op, array1, array2, expt_result):
-    assert op(array1, array2) == expt_result
+def test_ndarray_operators(method, operator):
+    obj = mock.Mock(spec=ndarray.NDArray)
+    obj._applied_elementwise = mock.Mock()
+
+    method(obj, mock.sentinel.rhs)
+
+    obj._applied_elementwise.assert_called_once_with(
+        operator, obj, mock.sentinel.rhs,
+    )
+
+@pytest.mark.parametrize('method, operator', [
+    (ndarray.NDArray.__radd__, operator.add),
+    (ndarray.NDArray.__rsub__, operator.sub),
+    (ndarray.NDArray.__rmul__, operator.mul),
+    (ndarray.NDArray.__rtruediv__, operator.truediv),
+    (ndarray.NDArray.__rfloordiv__, operator.floordiv),
+    (ndarray.NDArray.__rmod__, operator.mod),
+    (ndarray.NDArray.__rpow__, operator.pow),
+])
+def test_ndarray_rev_operators(method, operator):
+    obj = mock.Mock(spec=ndarray.NDArray)
+    obj._applied_elementwise = mock.Mock()
+
+    method(obj, mock.sentinel.rhs)
+
+    obj._applied_elementwise.assert_called_once_with(
+        operator, mock.sentinel.rhs, obj,
+    )
+
+
+def test_ndarray_modify_elementwise():
+    op = sp.Function("f")
+    array1 = ndarray.NDArray.from_values(
+        [sp.symbols("x0:3"), sp.symbols("x3:6")]
+    )
+    array2 = ndarray.NDArray.from_values(
+        [sp.symbols("y0:3"), sp.symbols("y3:6")]
+    )
+    expt_result = ndarray.NDArray.from_values([
+        [
+            op(array1[0][0], array2[0][0]),
+            op(array1[0][1], array2[0][1]),
+            op(array1[0][2], array2[0][2]),
+        ],
+        [
+            op(array1[1][0], array2[1][0]),
+            op(array1[1][1], array2[1][1]),
+            op(array1[1][2], array2[1][2]),
+        ],
+    ])
+
+    array1._modify_elementwise(op, array2)
+    assert array1 == expt_result
+
+
+@pytest.mark.parametrize('method, operator', [
+    (ndarray.NDArray.__iadd__, operator.iadd),
+    (ndarray.NDArray.__isub__, operator.isub),
+    (ndarray.NDArray.__imul__, operator.imul),
+    (ndarray.NDArray.__itruediv__, operator.itruediv),
+    (ndarray.NDArray.__ifloordiv__, operator.ifloordiv),
+    (ndarray.NDArray.__imod__, operator.imod),
+    (ndarray.NDArray.__ipow__, operator.ipow),
+])
+def test_ndarray_assignment_operators(method, operator):
+    obj = mock.Mock(spec=ndarray.NDArray)
+    obj._modify_elementwise = mock.Mock()
+
+    method(obj, mock.sentinel.rhs)
+
+    obj._modify_elementwise.assert_called_once_with(
+        operator, mock.sentinel.rhs,
+    )
