@@ -409,6 +409,11 @@ def test_ndarray_operators(method, operator):
     (ndarray.NDArray.__rfloordiv__, operator.floordiv),
     (ndarray.NDArray.__rmod__, operator.mod),
     (ndarray.NDArray.__rpow__, operator.pow),
+    (ndarray.NDArray.__rlshift__, operator.lshift),
+    (ndarray.NDArray.__rrshift__, operator.rshift),
+    (ndarray.NDArray.__rand__, operator.and_),
+    (ndarray.NDArray.__rxor__, operator.xor),
+    (ndarray.NDArray.__ror__, operator.or_),
 ])
 def test_ndarray_rev_operators(method, operator):
     obj = mock.Mock(spec=ndarray.NDArray)
@@ -454,6 +459,11 @@ def test_ndarray_modify_elementwise():
     (ndarray.NDArray.__ifloordiv__, operator.ifloordiv),
     (ndarray.NDArray.__imod__, operator.imod),
     (ndarray.NDArray.__ipow__, operator.ipow),
+    (ndarray.NDArray.__ilshift__, operator.ilshift),
+    (ndarray.NDArray.__irshift__, operator.irshift),
+    (ndarray.NDArray.__iand__, operator.iand),
+    (ndarray.NDArray.__ixor__, operator.ixor),
+    (ndarray.NDArray.__ior__, operator.ior),
 ])
 def test_ndarray_assignment_operators(method, operator):
     obj = mock.Mock(spec=ndarray.NDArray)
