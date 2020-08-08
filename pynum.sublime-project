@@ -3,7 +3,7 @@
 		{
 			"name": "Test",
 			"working_dir": "$project_path",
-			"cmd": ["venv/bin/python", "-m", "pytest"],
+			"cmd": ["venv/bin/python", "-m", "pytest", "--cov=pynum"],
 		},
 		{
 			"name": "New Terminal",
