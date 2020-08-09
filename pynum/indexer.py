@@ -48,57 +48,125 @@ def _nd_shape(array):
     return tuple(shape)
 
 
+class Range:
+    """
+    A `range`-like class constructed with a length instead of a `stop` value.
+
+    Because the length of this iterable is specified on construction and is not
+    calculated from the `start`, `stop` and `step` values, it allows for
+    `step=0`. Since doing so makes the four values redundant, the `stop`
+    parameter is not required.
+    """
+    __slots__ = ('start', 'step', 'length')
+
+    def __init__(self, *values):
+        if len(values) > 3 or len(values) == 0:
+            raise TypeError
+        if not all(isinstance(i, numbers.Integral) for i in values):
+            raise TypeError
+
+        if len(values) == 2:
+            values = (*values, 1)
+        if len(values) == 1:
+            values = (0, *values, 1)
+
+        self.start, self.length, self.step = values
+
+        if not self.length >= 0:
+            raise ValueError
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, index):
+        if isinstance(index, numbers.Integral):
+            if not 0 <= index < self.length:
+                raise IndexError
+            return self.start + self.step*index
+
+        if isinstance(index, slice):
+            i_start, i_stop, i_step = slice.indices(self.length)
+            return self.__class__(
+                self.start + self.step*i_start,
+                max(0, (i_stop - i_start) // i_step),
+                self.step*i_step,
+            )
+
+        raise TypeError
+
+    def __eq__(self, rhs):
+        if isinstance(rhs, (self.__class__, range)):
+            return (
+                len(rhs) == self.length
+                and (
+                    rhs._start == self.start
+                    or self.length == 0
+                ) and (
+                    rhs._step == self.step
+                    or self.length <= 1
+                )
+            )
+
+        return False
+
+    @classmethod
+    def from_range(cls, r):
+        return cls(r.start, len(r), r.step)
+
+    @property
+    def min(self):
+        if self.length == 0:
+            raise ValueError
+        return self.start + min(0, self.step) * (self.length - 1)
+
+    @property
+    def max(self):
+        if self.length == 0:
+            raise ValueError
+        return self.start + max(0, self.step) * (self.length - 1)
+
+
 class Indexer:
     """A generic indexer object."""
 
-    __slots__ = ('_shape', '_offset', '_strides')
+    __slots__ = ('_offset', '_dim_offsets')
 
-    def __init__(self, shape, offset, strides):
+    def __init__(self, offset, dim_offsets):
         """Construct an instance."""
-        if not isinstance(shape, tuple):
-            shape = tuple(shape)
-        if not isinstance(strides, tuple):
-            strides = tuple(strides)
+        if not isinstance(dim_offsets, tuple):
+            dim_offsets = tuple(dim_offsets)
 
-        if not all(isinstance(i, numbers.Integral) for i in shape):
-            raise TypeError("shape dimensions must all be integral values")
         if not isinstance(offset, numbers.Integral):
             raise TypeError("index offset must be an integral value")
-        if not all(isinstance(i, numbers.Integral) for i in strides):
-            raise TypeError("strides must all be integral values")
+        if not all(
+            isinstance(indices, Range)
+            or all(isinstance(i, numbers.Integral) for i in indices)
+            for indices in dim_offsets
+        ):
+            raise TypeError("dimension offsets must all be integral values")
 
-        if not all(i >= 0 for i in shape):
-            raise ValueError(
-                "shape dimensions must all be non-negative values"
-            )
-
-        if len(shape) != len(strides):
-            raise ValueError(
-                "numbers of shape dimensions and strides must be equal"
-            )
-
-        self._shape = shape
         self._offset = offset
-        self._strides = strides
+        self._dim_offsets = dim_offsets
 
     def __repr__(self):
         """Generate text representation of instance."""
         return (
             f"<{self.__class__.__name__}:"
-            f" shape={self._shape},"
             f" offset={self._offset},"
-            f" strides={self._strides}>"
+            f" dim offsets={self._dim_offsets}>"
         )
 
     @classmethod
     def make_basic(cls, shape):
         """Construct a basic, contiguous indexer object."""
         return cls(
-            shape=shape,
             offset=0,
-            strides=shape and tuple(
-                itertools.accumulate((1,) + shape[:0:-1], operator.mul)
-            )[::-1],
+            dim_offsets=tuple(Range(0, length, step) for length, step in zip(
+                shape,
+                (
+                    (1,) + itertools.accumulate(shape[:0:-1], operator.mul)
+                )[:-len(shape):-1]
+            ))
         )
 
     def __eq__(self, other):
@@ -110,11 +178,11 @@ class Indexer:
         """
         return (
             isinstance(other, self.__class__)
-            and self._shape == other._shape
             and self._offset == other._offset
             and all(
-                i == j or k in (0, 1)
-                for i, j, k in zip(self._strides, other._strides, self._shape)
+                dim1 == dim2
+                or all(i1 == i2 for i1, i2 in zip(dim1, dim2))
+                for dim1, dim2 in zip(self._dim_offsets, other._dim_offsets)
             )
         )
 
@@ -129,44 +197,47 @@ class Indexer:
         in-1 -> array[0, 0, ..., 0, -1]
         in -> array[0, 0, ..., 1, 0]
         """
-        for nd_index in _nd_indices(self._shape):
-            yield self._offset + sum(
-                i*stride for i, stride in zip(nd_index, self._strides)
-            )
+        return (
+            sum(indices)
+            for indices in itertools.product(self._dim_offsets)
+        )
 
     def __len__(self):
         """Calculate number of indices."""
-        return functools.reduce(operator.mul, self._shape, 1)
+        return functools.reduce(operator.mul, self.shape, 1)
+
+    @property
+    def ndim(self):
+        return len(self._dim_offsets)
+
+    @property
+    def shape(self):
+        return (len(dim) for dim in self._dim_offsets)
 
     @property
     def min(self):
         if not self:
             raise ValueError
-        return self._offset + sum(
-            (i-1) * j
-            for i, j in zip(self._shape, self._strides)
-            if j < 0
-        )
+        return self._offset + sum(dim.min for dim in self._dim_offsets)
 
     @property
     def max(self):
         if not self:
             raise ValueError
-        return self._offset + sum(
-            (i-1) * j
-            for i, j in zip(self._shape, self._strides)
-            if j > 0
-        )
+        return self._offset + sum(dim.max for dim in self._dim_offsets)
 
     def added_dim(self, new_dim):
         """Create a copy of the indexer, adding an extra dimension."""
-        if not -len(self._shape) <= new_dim <= len(self._shape):
+        if not -len(self._dim_offsets) <= new_dim <= len(self._dim_offsets):
             raise IndexError
 
         return self.__class__(
-            shape=self._shape[:new_dim] + (1,) + self._shape[new_dim:],
             offset=self._offset,
-            strides=self._strides[:new_dim] + (1,) + self._strides[new_dim:]
+            dim_offsets=(
+                self._dim_offsets[:new_dim]
+                + Range(1)
+                + self._dim_offsets[new_dim:]
+            )
         )
 
     def sliced(self, index):
@@ -179,7 +250,7 @@ class Indexer:
 
         def slice_fill(index):
             """Create the slice(None) filling for an nd-index."""
-            num = len(self._shape) - sum(1 for i in index if i is not Ellipsis)
+            num = self.ndim - sum(1 for i in index if i is not Ellipsis)
             return (slice(None),) * num
 
         # Strip out ellipses
@@ -191,35 +262,26 @@ class Indexer:
             if Ellipsis in index[i_mid+1:]:
                 raise ValueError
             index = index[:i_mid] + slice_fill(index) + index[i_mid+1:]
-            assert len(index) == len(self._shape)
+            assert len(index) == self.ndim
 
         # Fill empty dims with full slices
-        if len(index) < len(self._shape):
+        if len(index) < self.ndim:
             index = index + slice_fill(index)
-            assert len(index) == len(self._shape)
-        elif len(index) > len(self._shape):
+            assert len(index) == self.ndim
+        elif len(index) > self.ndim:
             raise ValueError
 
         # Map slices/single indices to literal coordinates
-        index = tuple(
-            range(dim)[idx]
-            for idx, dim in zip(index, self._shape)
-        )
+        index = tuple(dim[idx] for idx, dim in zip(index, self._dim_offsets))
 
         # Calculate parameters
         result = self.__class__(
-            shape=tuple(
-                len(idx)
-                for idx in index
-                if not isinstance(idx, numbers.Integral)
-            ),
             offset=self._offset + sum(
-                (i if isinstance(i, numbers.Integral) else i.start) * stride
-                for i, stride in zip(index, self._strides)
+                (i if isinstance(i, numbers.Integral) else i.start) * dim.step
+                for i, dim in zip(index, self._dim_offsets)
             ),
-            strides=tuple(
-                idx.step * stride
-                for idx, stride in zip(index, self._strides)
+            dim_offsets=tuple(
+                idx for idx in index
                 if not isinstance(idx, numbers.Integral)
             ),
         )
@@ -232,44 +294,35 @@ class Indexer:
         if not isinstance(indexer1, cls) or not isinstance(indexer2, cls):
             raise TypeError
 
-        shape1 = list(indexer1._shape)
-        strides1 = list(indexer1._strides)
+        dim_offsets1 = list(indexer1._dim_offsets)
+        dim_offsets2 = list(indexer2._dim_offsets)
 
-        shape2 = list(indexer2._shape)
-        strides2 = list(indexer2._strides)
-
-        ndim_diff = len(shape2) - len(shape1)
+        ndim_diff = len(dim_offsets1) - len(dim_offsets1)
         if ndim_diff >= 0:
-            shape1 = ndim_diff*[1] + shape1
-            strides1 = ndim_diff*[1] + strides1
+            dim_offsets1 = ndim_diff*[Range(1)] + dim_offsets1
         else:
-            shape2 = (-ndim_diff)*[1] + shape2
-            strides2 = (-ndim_diff)*[1] + strides2
-        assert len(shape1) == len(shape2) == len(strides1) == len(strides2)
+            dim_offsets2 = (-ndim_diff)*[Range(1)] + dim_offsets2
+        assert len(dim_offsets1) == len(dim_offsets2)
 
-        for i in range(len(shape1))[::-1]:
-            dim1 = shape1[i]
-            dim2 = shape2[i]
-            if dim1 == dim2:
+        for i in range(len(dim_offsets1))[::-1]:
+            dim1 = dim_offsets1[i]
+            dim2 = dim_offsets2[i]
+            if dim1.length == dim2.length:
                 continue
-            if dim1 == 1:
-                shape1[i] = dim2
-                strides1[i] = 0
-            elif dim2 == 1:
-                shape2[i] = dim1
-                strides2[i] = 0
+            if dim1.length == 1:
+                dim_offsets1[i] = dim2
+            elif dim2.length == 1:
+                dim_offsets2[i] = dim1
             else:
                 raise ValueError
 
         result1 = cls(
-            shape=shape1,
             offset=indexer1._offset,
-            strides=strides1,
+            dim_offsets=dim_offsets1,
         )
         result2 = cls(
-            shape=shape2,
             offset=indexer2._offset,
-            strides=strides2,
+            dim_offsets=dim_offsets2,
         )
 
         return result1, result2
@@ -279,30 +332,26 @@ class Indexer:
         if not isinstance(new_shape, tuple):
             raise TypeError
 
-        shape_self = list(self._shape)
-        strides_self = list(self._strides)
+        dim_offsets_self = list(self._dim_offsets)
 
-        ndim_diff = len(new_shape) - len(shape_self)
+        ndim_diff = len(new_shape) - len(dim_offsets_self)
         if ndim_diff < 0:
             raise ValueError
-        shape_self = ndim_diff*[1] + shape_self
-        strides_self = ndim_diff*[1] + strides_self
-        assert len(shape_self) == len(strides_self) == len(new_shape)
+        dim_offsets_self = ndim_diff*[Range(1)] + dim_offsets_self
+        assert len(dim_offsets_self) == len(new_shape)
 
-        for i in range(len(shape_self))[::-1]:
-            dim_self, dim_other = shape_self[i], new_shape[i]
+        for i in range(len(dim_offsets_self))[::-1]:
+            dim_self, dim_other = dim_offsets_self[i].length, new_shape[i]
             if dim_self == dim_other:
                 continue
             if dim_self != 1:
                 raise ValueError
 
-            shape_self[i] = dim_other
-            strides_self[i] = 0
+            dim_offsets_self[i] = Range(0, dim_other, 0)
 
         result = self.__class__(
-            shape=shape_self,
             offset=self._offset,
-            strides=strides_self,
+            dim_offsets=dim_offsets_self,
         )
 
         return result
