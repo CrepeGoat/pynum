@@ -50,15 +50,19 @@ def test_nd_shape_raises(array, expt_error):
 
 ###############################################################################
 
-@pytest.mark.parametrize('shape, offset, strides', [
-    ((), 0, ()),
-    ((3,), 0, (1,)),
-    ((3,), 5, (1,)),
-    ((1, 2, 3,), 0, (6, 3, 1,)),
-    ((3,), 2, (-1,))
+@pytest.mark.parametrize('offset, dim_offsets', [
+    (0, ()),
+    (0, (indexer.Range(0, 3, 1),)),
+    (5, (indexer.Range(0, 3, 1),)),
+    (0, (
+        indexer.Range(0, 1, 6),
+        indexer.Range(0, 2, 3),
+        indexer.Range(0, 3, 1),
+    )),
+    (2, (indexer.Range(0, 3, -1),)),
 ])
-def test_indexer_init(shape, offset, strides):
-    _ = indexer.Indexer(shape, offset, strides)
+def test_indexer_init(offset, dim_offsets):
+    _ = indexer.Indexer(offset, dim_offsets)
 
 
 @pytest.mark.parametrize('shape, offset, strides, expt_error', [
